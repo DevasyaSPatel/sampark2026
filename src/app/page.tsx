@@ -4,19 +4,20 @@ export default function Home() {
   return (
     <div className="min-h-screen">
       {/* Navigation */}
+      {/* Navigation */}
       <nav className="glass fixed top-0 w-full z-50 px-4 py-3 md:px-6 md:py-4">
-        <div className="container flex justify-between items-center">
-          <Link href="/" className="text-xl md:text-2xl font-bold gradient-text">
+        <div className="w-full max-w-7xl mx-auto flex justify-between items-center">
+          <Link href="/" className="text-lg sm:text-xl md:text-2xl font-bold gradient-text shrink-0">
             Sampark 2026
           </Link>
-          <div className="flex gap-3 md:gap-6 items-center">
+          <div className="flex gap-4 md:gap-8 items-center flex-nowrap">
             <Link href="/themes" className="hidden md:block hover:text-primary transition-colors">
               Themes
             </Link>
-            <Link href="/login" className="hover:text-primary transition-colors text-sm md:text-base">
+            <Link href="/login" className="hover:text-primary transition-colors text-sm md:text-base whitespace-nowrap">
               Login
             </Link>
-            <Link href="/register" className="btn btn-primary px-3 py-2 md:px-6 md:py-2 text-xs md:text-sm md:text-base">
+            <Link href="/register" className="btn btn-primary px-4 py-2 md:px-6 md:py-2 text-xs md:text-sm md:text-base whitespace-nowrap">
               Register
             </Link>
           </div>

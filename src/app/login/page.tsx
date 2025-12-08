@@ -46,11 +46,11 @@ export default function Login() {
             </div>
 
             {/* Navigation */}
-            <nav className="fixed top-0 left-0 w-full p-6 flex justify-between items-center bg-transparent z-50">
-                <Link href="/" className="text-xl font-bold hover:text-primary transition-colors">
+            <nav className="fixed top-0 left-0 w-full p-4 md:p-6 flex justify-between items-center bg-transparent z-50">
+                <Link href="/" className="text-lg md:text-xl font-bold hover:text-primary transition-colors">
                     Sampark 2026
                 </Link>
-                <Link href="/" className="px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 transition-all text-sm border border-white/10">
+                <Link href="/" className="px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 transition-all text-xs md:text-sm border border-white/10">
                     ← Home
                 </Link>
             </nav>

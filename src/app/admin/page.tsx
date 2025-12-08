@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
+import Link from 'next/link';
 
 export default function AdminDashboard() {
     const [password, setPassword] = useState('');
@@ -128,27 +129,53 @@ export default function AdminDashboard() {
 
     if (!isLoggedIn) {
         return (
-            <div className="min-h-screen flex items-center justify-center p-4 bg-black">
-                <form onSubmit={handleLogin} className="glass p-8 max-w-sm w-full mx-auto">
-                    <h1 className="text-2xl font-bold mb-6 text-center text-white">Admin Login</h1>
-                    <input
-                        type="password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        className="w-full bg-black/50 border border-glass-border rounded p-3 mb-6 text-white text-center tracking-widest"
-                        placeholder="Enter Password"
-                    />
-                    <button disabled={loading} className="btn btn-primary w-full py-3">
-                        {loading ? 'Accessing...' : 'Unlock Panel'}
-                    </button>
-                </form>
+            <div className="min-h-screen flex items-center justify-center relative px-4 pt-20">
+                {/* Background Effects */}
+                <div className="absolute inset-0 z-0 overflow-hidden">
+                    <div className="absolute top-0 right-0 w-1/2 h-1/2 bg-purple-600 opacity-20 blur-[120px] rounded-full"></div>
+                    <div className="absolute bottom-0 left-0 w-1/3 h-1/3 bg-blue-600 opacity-20 blur-[100px] rounded-full"></div>
+                </div>
+
+                {/* Navigation */}
+                <nav className="fixed top-0 left-0 w-full p-4 md:p-6 flex justify-between items-center bg-transparent z-50">
+                    <Link href="/" className="text-lg md:text-xl font-bold hover:text-primary transition-colors">
+                        Sampark 2026
+                    </Link>
+                    <Link href="/" className="px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 transition-all text-xs md:text-sm border border-white/10">
+                        ← Home
+                    </Link>
+                </nav>
+
+                <div className="glass p-8 md:p-12 w-full max-w-md z-10">
+                    <h1 className="text-3xl font-bold mb-2 text-center text-white">Admin Access</h1>
+                    <p className="text-gray-400 text-center mb-8">Restricted Area</p>
+
+                    <form onSubmit={handleLogin} className="flex flex-col gap-6">
+                        <div>
+                            <label className="block text-sm text-gray-400 mb-2">Access Key</label>
+                            <input
+                                type="password"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                className="w-full bg-black/50 border border-glass-border rounded-lg p-3 text-white text-center tracking-widest focus:outline-none focus:border-primary transition-colors"
+                                placeholder="••••••••"
+                            />
+                        </div>
+
+                        <button disabled={loading} className="btn btn-primary w-full py-3">
+                            {loading ? 'Verifying...' : 'Unlock Panel'}
+                        </button>
+                    </form>
+                </div>
             </div>
         );
     }
 
     return (
-        <div className="min-h-screen pt-24 px-6 pb-20 bg-black text-white">
-            <div className="container mx-auto max-w-7xl">
+        <div className="min-h-screen pt-24 px-6 pb-20 text-white relative">
+            <div className="absolute inset-0 z-0 bg-black"></div>
+            {/* Main Content */}
+            <div className="relative z-10 container mx-auto max-w-7xl">
                 <div className="flex flex-col md:flex-row justify-between items-center mb-10 gap-4">
                     <h1 className="text-4xl font-bold gradient-text">Admin Dashboard</h1>
                     <button onClick={() => setIsLoggedIn(false)} className="text-sm text-gray-500 hover:text-white">Logout</button>
@@ -195,19 +222,19 @@ export default function AdminDashboard() {
                             {filteredUsers.map((user, i) => (
                                 <tr key={i} className="hover:bg-white/5 transition-colors">
                                     <td className="p-4 font-medium text-white">{user.name}</td>
-                                    <td className="p-4 text-gray-400 text-sm">{user.email}</td>
-                                    <td className="p-4 text-gray-400 text-sm">{user.phone}</td>
+                                    <td className="p-4 text-gray-400 text-sm whitespace-nowrap">{user.email}</td>
+                                    <td className="p-4 text-gray-400 text-sm whitespace-nowrap">{user.phone}</td>
                                     <td className="p-4"><span className="px-2 py-1 bg-blue-500/20 text-blue-300 rounded text-xs whitespace-nowrap">{user.theme}</span></td>
                                     <td className="p-4">
                                         <span className={`px-2 py-1 rounded text-xs font-semibold whitespace-nowrap ${user.status === 'Approved' ? 'bg-green-500/20 text-green-400' :
-                                                user.status === 'Rejected' ? 'bg-red-500/20 text-red-400' :
-                                                    'bg-yellow-500/20 text-yellow-400'
+                                            user.status === 'Rejected' ? 'bg-red-500/20 text-red-400' :
+                                                'bg-yellow-500/20 text-yellow-400'
                                             }`}>
                                             {user.status}
                                         </span>
                                     </td>
                                     <td className="p-4">
-                                        <div className="flex justify-end gap-3">
+                                        <div className="flex justify-end gap-4 items-center whitespace-nowrap">
                                             <button
                                                 onClick={() => setEditingUser(user)}
                                                 className="px-3 py-1.5 text-xs bg-white/10 hover:bg-white/20 rounded transition text-white"
@@ -247,19 +274,19 @@ export default function AdminDashboard() {
                         <form onSubmit={handleUpdate} className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div className="md:col-span-2">
                                 <label className="text-xs text-gray-400">Full Name</label>
-                                <input className="w-full glass p-2 mt-1" value={editingUser.name} onChange={(e) => setEditingUser({ ...editingUser, name: e.target.value })} />
+                                <input className="w-full glass p-2 mt-1 text-white" value={editingUser.name} onChange={(e) => setEditingUser({ ...editingUser, name: e.target.value })} />
                             </div>
                             <div>
                                 <label className="text-xs text-gray-400">Email</label>
-                                <input className="w-full glass p-2 mt-1" value={editingUser.email} onChange={(e) => setEditingUser({ ...editingUser, email: e.target.value })} />
+                                <input className="w-full glass p-2 mt-1 text-white" value={editingUser.email} onChange={(e) => setEditingUser({ ...editingUser, email: e.target.value })} />
                             </div>
                             <div>
                                 <label className="text-xs text-gray-400">Phone</label>
-                                <input className="w-full glass p-2 mt-1" value={editingUser.phone} onChange={(e) => setEditingUser({ ...editingUser, phone: e.target.value })} />
+                                <input className="w-full glass p-2 mt-1 text-white" value={editingUser.phone} onChange={(e) => setEditingUser({ ...editingUser, phone: e.target.value })} />
                             </div>
                             <div>
                                 <label className="text-xs text-gray-400">Theme</label>
-                                <select className="w-full glass p-2 mt-1" value={editingUser.theme} onChange={(e) => setEditingUser({ ...editingUser, theme: e.target.value })}>
+                                <select className="w-full glass p-2 mt-1 text-white bg-black/80" value={editingUser.theme} onChange={(e) => setEditingUser({ ...editingUser, theme: e.target.value })}>
                                     <option>AI Agents</option>
                                     <option>Green Tech</option>
                                     <option>Blockchain</option>
@@ -269,7 +296,7 @@ export default function AdminDashboard() {
                             </div>
                             <div>
                                 <label className="text-xs text-gray-400">Year</label>
-                                <input className="w-full glass p-2 mt-1" value={editingUser.year} onChange={(e) => setEditingUser({ ...editingUser, year: e.target.value })} />
+                                <input className="w-full glass p-2 mt-1 text-white" value={editingUser.year} onChange={(e) => setEditingUser({ ...editingUser, year: e.target.value })} />
                             </div>
 
                             <div className="md:col-span-2 mt-4 flex gap-3 justify-end">
