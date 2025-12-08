@@ -38,11 +38,22 @@ export default function Login() {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center relative px-4">
+        <div className="min-h-screen flex items-center justify-center relative px-4 pt-20">
+            {/* Background Effects */}
             <div className="absolute inset-0 z-0">
                 <div className="absolute top-0 right-0 w-1/2 h-1/2 bg-blue-600 opacity-20 blur-[120px] rounded-full"></div>
                 <div className="absolute bottom-0 left-0 w-1/3 h-1/3 bg-pink-600 opacity-20 blur-[100px] rounded-full"></div>
             </div>
+
+            {/* Navigation */}
+            <nav className="fixed top-0 left-0 w-full p-6 flex justify-between items-center bg-transparent z-50">
+                <Link href="/" className="text-xl font-bold hover:text-primary transition-colors">
+                    Sampark 2026
+                </Link>
+                <Link href="/" className="px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 transition-all text-sm border border-white/10">
+                    ← Home
+                </Link>
+            </nav>
 
             <div className="glass p-8 md:p-12 w-full max-w-md z-10">
                 <h1 className="text-3xl font-bold mb-2 text-center">Welcome Back</h1>
