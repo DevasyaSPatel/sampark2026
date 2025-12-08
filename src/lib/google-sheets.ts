@@ -26,11 +26,6 @@ export async function authenticateUser(username: string, pass: string) {
 
     try {
         // Fetching range A:L from 'Form Responses 1'
-        // A: Timestamp (0)
-        // B: Name (1)
-        // C: Email (2) - used as Login ID
-        // ...
-        // L: Password (11)
         const response = await sheets.spreadsheets.values.get({
             spreadsheetId: SHEET_ID,
             range: 'Form Responses 1!A:L',
@@ -39,13 +34,8 @@ export async function authenticateUser(username: string, pass: string) {
         const rows = response.data.values;
         if (!rows || rows.length === 0) return null;
 
-        // Skip header row if it exists (usually row 0)
-        // We can check if row[0] === 'Timestamp' to skip, or just find match.
-        // The find matches exact string so header won't match likely.
         const user = rows.find((row: string[]) => {
-            // Check if row has enough columns
             if (!row[2] || !row[11]) return false;
-            // Case insensitive email check might be good, but strict for now
             return row[2].trim() === username.trim() && row[11].trim() === pass.trim();
         });
 
@@ -54,7 +44,6 @@ export async function authenticateUser(username: string, pass: string) {
                 name: user[1],
                 email: user[2],
                 phone: user[3],
-                // Return other useful info if needed
             };
         }
         return null;
@@ -65,47 +54,33 @@ export async function authenticateUser(username: string, pass: string) {
 }
 
 export async function generateCredentials(rowId: number) {
-    // Simple generator: SMPK + Row Number
     const username = `SMPK${1000 + rowId}`;
-
-    // Random 6-char password
-    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // No I, 1, O, 0 for clarity
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
     let password = '';
     for (let i = 0; i < 6; i++) {
         password += chars.charAt(Math.floor(Math.random() * chars.length));
     }
-
     return { username, password };
 }
 
 export async function appendUserAndGetCredentials(userData: any) {
     if (!SHEET_ID) throw new Error("Missing GOOGLE_SHEET_ID");
 
-    // 1. Get current row count to generate unique ID
-    const metaData = await sheets.spreadsheets.get({
-        spreadsheetId: SHEET_ID
-    });
-    const sheet = metaData.data.sheets?.[0];
-
-    // Actually, getting 'values' is better to count filled rows
     const rangeData = await sheets.spreadsheets.values.get({
         spreadsheetId: SHEET_ID,
         range: 'Form Responses 1!A:A',
     });
-    const nextRow = (rangeData.data.values?.length || 0) + 1; // 1-indexed
+    const nextRow = (rangeData.data.values?.length || 0) + 1;
 
-    // 2. Generate Credentials
     const { username, password } = await generateCredentials(nextRow);
 
-    // 3. Append to Sheet
-    // Order: Timestamp(A), Name(B), Email(C), Phone(D), Uni(E), Dept(F), Year(G), Theme(H), Type(I), Team(J), Misc(K), Password(L)
     await sheets.spreadsheets.values.append({
         spreadsheetId: SHEET_ID,
         range: 'Form Responses 1!A:L',
         valueInputOption: 'USER_ENTERED',
         requestBody: {
             values: [[
-                new Date().toLocaleString(), // A: Timestamp
+                new Date().toLocaleString(), // A
                 userData.name,               // B
                 userData.email,              // C
                 userData.phone || '',        // D
@@ -116,7 +91,8 @@ export async function appendUserAndGetCredentials(userData: any) {
                 userData.participationType || '', // I
                 userData.teamName || '',     // J
                 userData.anythingElse || '', // K
-                password                     // L
+                password,                    // L
+                'Pending'                    // M: Status
             ]],
         },
     });
@@ -124,28 +100,127 @@ export async function appendUserAndGetCredentials(userData: any) {
     return { username, password };
 }
 
-export async function addConnection(sourceEmail: string, targetEmail: string) {
+export async function getAllUsers() {
+    if (!SHEET_ID) throw new Error("Missing GOOGLE_SHEET_ID");
+
+    try {
+        const response = await sheets.spreadsheets.values.get({
+            spreadsheetId: SHEET_ID,
+            range: 'Form Responses 1!A:P', // Fetch up to P (GitHub)
+        });
+
+        const rows = response.data.values;
+        if (!rows || rows.length === 0) return [];
+
+        return rows.slice(1).map((row, index) => ({
+            rowIndex: index + 2,
+            timestamp: row[0],
+            name: row[1],
+            email: row[2],
+            phone: row[3],
+            university: row[4],
+            department: row[5],
+            year: row[6],
+            theme: row[7],
+            participationType: row[8],
+            teamName: row[9],
+            anythingElse: row[10],
+            status: row[12] || 'Pending',
+            linkedin: row[13] || '',
+            instagram: row[14] || '',
+            github: row[15] || ''
+        }));
+    } catch (error) {
+        console.error("Error fetching users:", error);
+        throw error;
+    }
+}
+
+export async function updateUserStatus(rowIndex: number, newStatus: string) {
+    if (!SHEET_ID) throw new Error("Missing GOOGLE_SHEET_ID");
+
+    await sheets.spreadsheets.values.update({
+        spreadsheetId: SHEET_ID,
+        range: `Form Responses 1!M${rowIndex}`,
+        valueInputOption: 'USER_ENTERED',
+        requestBody: {
+            values: [[newStatus]]
+        }
+    });
+}
+
+export async function updateUserDetails(rowIndex: number, data: any) {
+    if (!SHEET_ID) throw new Error("Missing GOOGLE_SHEET_ID");
+
+    const mainValues = [
+        data.name,
+        data.email,
+        data.phone,
+        data.university,
+        data.department,
+        data.year,
+        data.theme,
+        data.participationType,
+        data.teamName,
+        data.anythingElse
+    ];
+
+    await sheets.spreadsheets.values.update({
+        spreadsheetId: SHEET_ID,
+        range: `Form Responses 1!B${rowIndex}:K${rowIndex}`,
+        valueInputOption: 'USER_ENTERED',
+        requestBody: {
+            values: [mainValues]
+        }
+    });
+
+    // Update Socials: N, O, P
+    const socialValues = [
+        data.linkedin || '',
+        data.instagram || '',
+        data.github || ''
+    ];
+
+    await sheets.spreadsheets.values.update({
+        spreadsheetId: SHEET_ID,
+        range: `Form Responses 1!N${rowIndex}:P${rowIndex}`,
+        valueInputOption: 'USER_ENTERED',
+        requestBody: {
+            values: [socialValues]
+        }
+    });
+}
+
+export async function addConnection(data: {
+    sourceEmail?: string,
+    targetEmail: string,
+    sourceName?: string,
+    sourcePhone?: string,
+    note?: string
+}) {
     if (!SHEET_ID) throw new Error("Missing GOOGLE_SHEET_ID");
 
     try {
         // Append to 'Connections' sheet
-        // Columns: Source (A), Target (B), Timestamp (C)
+        // Columns: SourceEmail (A), TargetEmail (B), Timestamp (C), SourceName (D), SourcePhone (E), Note (F)
         await sheets.spreadsheets.values.append({
             spreadsheetId: SHEET_ID,
-            range: 'Connections!A:C',
+            range: 'Connections!A:F',
             valueInputOption: 'USER_ENTERED',
             requestBody: {
                 values: [[
-                    sourceEmail,
-                    targetEmail,
-                    new Date().toISOString()
+                    data.sourceEmail || '',
+                    data.targetEmail,
+                    new Date().toISOString(),
+                    data.sourceName || '',
+                    data.sourcePhone || '',
+                    data.note || ''
                 ]],
             },
         });
         return true;
     } catch (error) {
         console.error("Error adding connection:", error);
-        // If sheet missing, maybe try creating it? For now just log.
         return false;
     }
 }
@@ -162,14 +237,59 @@ export async function getConnectionsCount(email: string) {
         const rows = response.data.values;
         if (!rows || rows.length === 0) return 0;
 
-        // bi-directional count
+        // Count where I am the TARGET
         const count = rows.filter((row: string[]) =>
-            (row[0]?.trim() === email.trim()) || (row[1]?.trim() === email.trim())
+            (row[1]?.trim() === email.trim())
         ).length;
 
         return count;
     } catch (error) {
         return 0;
+    }
+}
+
+export async function getUserConnections(email: string) {
+    if (!SHEET_ID) throw new Error("Missing GOOGLE_SHEET_ID");
+
+    try {
+        const response = await sheets.spreadsheets.values.get({
+            spreadsheetId: SHEET_ID,
+            range: 'Connections!A:F',
+        });
+
+        const rows = response.data.values;
+        if (!rows || rows.length === 0) return [];
+
+        // Find rows where user is the TARGET
+        const myConnections = rows
+            .filter((row: string[]) => row[1]?.trim() === email.trim())
+            .map((row: string[]) => ({
+                sourceEmail: row[0],
+                timestamp: row[2],
+                sourceName: row[3] || 'Anonymous',
+                sourcePhone: row[4] || '',
+                note: row[5] || ''
+            }));
+
+        return myConnections.reverse(); // Newest first
+    } catch (error) {
+        console.error("Error getting connections:", error);
+        return [];
+    }
+}
+
+export async function getPassword(rowIndex: number) {
+    if (!SHEET_ID) throw new Error("Missing GOOGLE_SHEET_ID");
+
+    try {
+        const response = await sheets.spreadsheets.values.get({
+            spreadsheetId: SHEET_ID,
+            range: `Form Responses 1!L${rowIndex}`,
+        });
+
+        return response.data.values?.[0]?.[0] || null;
+    } catch (error) {
+        return null;
     }
 }
 
@@ -179,7 +299,7 @@ export async function getUser(email: string) {
     try {
         const response = await sheets.spreadsheets.values.get({
             spreadsheetId: SHEET_ID,
-            range: 'Form Responses 1!A:L',
+            range: 'Form Responses 1!A:P',
         });
 
         const rows = response.data.values;
@@ -196,6 +316,9 @@ export async function getUser(email: string) {
                 role: 'user',
                 theme: userRow[7] || '',
                 bio: userRow[10] || '',
+                linkedin: userRow[13] || '',
+                instagram: userRow[14] || '',
+                github: userRow[15] || '',
                 connections: connections,
             };
         }
@@ -205,4 +328,3 @@ export async function getUser(email: string) {
         return null;
     }
 }
-

@@ -54,7 +54,7 @@ export default function Register() {
     };
 
     return (
-        <div className="min-h-screen pt-24 pb-12 px-6">
+        <div className="min-h-screen pt-32 pb-12 px-4 md:px-8">
             <nav className="glass fixed top-0 left-0 w-full z-50 px-6 py-4">
                 <div className="container flex justify-between items-center">
                     <Link href="/" className="text-2xl font-bold gradient-text">Sampark 2026</Link>
@@ -62,8 +62,8 @@ export default function Register() {
                 </div>
             </nav>
 
-            <div className="container max-w-2xl">
-                <div className="glass p-8">
+            <div className="container max-w-3xl">
+                <div className="glass p-8 md:p-12">
                     <h1 className="text-3xl font-bold mb-6 text-center">Register for Sampark</h1>
 
                     {message && (
@@ -74,7 +74,7 @@ export default function Register() {
 
                     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
                         {/* Name & Email */}
-                        <div className="grid md:grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <label className="block text-sm text-gray-400 mb-1">Full Name</label>
                                 <input required name="name" type="text" onChange={handleChange} className="input-field" placeholder="John Doe" />
@@ -86,7 +86,7 @@ export default function Register() {
                         </div>
 
                         {/* Phone & Uni */}
-                        <div className="grid md:grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <label className="block text-sm text-gray-400 mb-1">Phone Number</label>
                                 <input required name="phone" type="tel" onChange={handleChange} className="input-field" placeholder="1234567890" />
@@ -98,7 +98,7 @@ export default function Register() {
                         </div>
 
                         {/* Dept & Year */}
-                        <div className="grid md:grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <label className="block text-sm text-gray-400 mb-1">Department</label>
                                 <input required name="department" type="text" onChange={handleChange} className="input-field" />
