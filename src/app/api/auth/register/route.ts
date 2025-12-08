@@ -28,7 +28,7 @@ export async function POST(request: Request) {
         }
 
         // 2. Send Email
-        const emailResult = await sendWelcomeEmail(body.email, body.name, credentials.username, credentials.password);
+        const emailResult = await sendWelcomeEmail(body.email, body.name, body.email, credentials.password);
 
         if (!emailResult?.success) {
             console.warn("Registration successful but email failed:", emailResult?.error);
