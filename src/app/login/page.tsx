@@ -10,19 +10,30 @@ export default function Login() {
     const [error, setError] = useState('');
     const router = useRouter();
 
-    const handleLogin = (e: React.FormEvent) => {
+    const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
-        // Simple mock Client-side login for demo purposes
-        // In real app: call API
-        if (id === 'EMP123' && password === 'password123') {
-            // Set cookie/localstorage
-            localStorage.setItem('user_id', id);
-            router.push('/dashboard');
-        } else if (id === 'ADM001' && password === 'admin') {
-            localStorage.setItem('user_id', id);
-            router.push('/dashboard');
-        } else {
-            setError('Invalid Credentials. Please check the email sent to you.');
+        setError('');
+
+        try {
+            const res = await fetch('/api/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username: id, password: password }),
+            });
+
+            const data = await res.json();
+
+            if (res.ok && data.success) {
+                // Determine user role or just allow access
+                localStorage.setItem('user_id', id);
+                // Optional: Store entire user object
+                localStorage.setItem('user_data', JSON.stringify(data.user));
+                router.push('/dashboard?loggedIn=true');
+            } else {
+                setError(data.message || 'Invalid Credentials');
+            }
+        } catch (err) {
+            setError('Something went wrong. Please try again.');
         }
     };
 
@@ -39,13 +50,13 @@ export default function Login() {
 
                 <form onSubmit={handleLogin} className="flex flex-col gap-6">
                     <div>
-                        <label className="block text-sm text-gray-400 mb-2">Registration ID</label>
+                        <label className="block text-sm text-gray-400 mb-2">Email Address</label>
                         <input
-                            type="text"
+                            type="email"
                             value={id}
                             onChange={(e) => setId(e.target.value)}
                             className="w-full bg-black/50 border border-glass-border rounded-lg p-3 text-white focus:outline-none focus:border-primary transition-colors"
-                            placeholder="e.g. EMP123"
+                            placeholder="name@example.com"
                         />
                     </div>
 

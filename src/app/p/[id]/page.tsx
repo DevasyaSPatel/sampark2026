@@ -54,7 +54,7 @@ export default function PublicProfile() {
         const res = await fetch(`/api/users/${id}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'connect' })
+            body: JSON.stringify({ action: 'connect', sourceEmail: myId })
         });
 
         if (res.ok) {
@@ -110,8 +110,8 @@ export default function PublicProfile() {
                     onClick={handleConnect}
                     disabled={connected}
                     className={`w-full py-4 text-lg font-bold rounded-xl transition-all ${connected
-                            ? 'bg-green-500 text-white cursor-default'
-                            : 'btn-primary hover:scale-105 shadow-xl shadow-blue-500/20'
+                        ? 'bg-green-500 text-white cursor-default'
+                        : 'btn-primary hover:scale-105 shadow-xl shadow-blue-500/20'
                         }`}
                 >
                     {connected ? 'Connected! 🎉' : 'Connect Now 👋'}

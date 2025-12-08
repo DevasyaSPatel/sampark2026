@@ -62,7 +62,7 @@ export default function Themes() {
                 </div>
 
                 <div className="text-center mt-20">
-                    <Link href="/register" className="btn btn-primary text-xl px-10 py-4">
+                    <Link href="/register" className="btn btn-primary text-lg px-8 py-3">
                         Register for a Theme
                     </Link>
                 </div>
