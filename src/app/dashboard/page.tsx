@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
+import RequestsList from '@/components/RequestsList';
+
 type User = {
     id: string;
     name: string;
@@ -15,14 +17,19 @@ type User = {
     linkedin: string;
     instagram: string;
     github: string;
+    slug: string; // Added slug
 };
 
 type Connection = {
     sourceName: string;
     sourceEmail: string;
+    targetEmail?: string; // Added targetEmail
     sourcePhone: string;
     note: string;
     timestamp: string;
+    status: string;
+    direction?: 'incoming' | 'outgoing';
+    name?: string; // Resolved name from backend
 };
 
 export default function Dashboard() {
@@ -148,6 +155,34 @@ export default function Dashboard() {
         }
     };
 
+    const handleRespond = async (sourceEmail: string, status: 'Accepted' | 'Rejected') => {
+        if (!user) return;
+        try {
+            const res = await fetch('/api/connections/respond', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    sourceEmail: sourceEmail, // The person who requested
+                    targetEmail: user.id,     // Me
+                    status
+                })
+            });
+
+            if (res.ok) {
+                // Refresh list
+                const updatedList = connectionsList.map(c =>
+                    c.sourceEmail === sourceEmail ? { ...c, status } : c
+                );
+                setConnectionsList(updatedList);
+                setMessage(`Request ${status}!`);
+            } else {
+                alert('Failed to update status');
+            }
+        } catch (e) {
+            console.error(e);
+        }
+    };
+
     const scanNFC = async () => {
         if ('NDEFReader' in window) {
             try {
@@ -179,8 +214,9 @@ export default function Dashboard() {
                 setIsScanning(false);
             }
         } else {
-            // Fallback to simulation
-            setShowSimulateInput(true);
+            // No NFC Support
+            setNfcError("NFC is not supported on this device or browser.");
+            setTimeout(() => setNfcError(''), 3000);
         }
     };
 
@@ -254,7 +290,6 @@ export default function Dashboard() {
 
                 {activeTab === 'profile' && (
                     <div className="grid md:grid-cols-2 gap-8">
-                        {/* Stats Card */}
                         <div className="glass p-8 h-fit">
                             <h2 className="text-2xl font-bold mb-6">Live Stats</h2>
                             <div className="text-center p-6 bg-white/5 rounded-xl border border-glass-border">
@@ -264,9 +299,20 @@ export default function Dashboard() {
 
                             <div className="mt-8 text-center">
                                 <p className="mb-4 text-sm text-gray-400">Share your public profile to connect:</p>
-                                <Link href={`/p/${user?.id}`} target="_blank" className="btn btn-outline w-full py-3 flex items-center justify-center gap-2">
-                                    <span>🔗</span> Public Profile Link (NFC Target)
-                                </Link>
+                                {user?.slug ? (
+                                    <div className="space-y-2">
+                                        <div className="p-3 bg-zinc-900 rounded border border-zinc-700 text-xs font-mono break-all select-all">
+                                            {window.location.origin}/sampark/{user.slug}
+                                        </div>
+                                        <Link href={`/sampark/${user.slug}`} target="_blank" className="btn btn-outline w-full py-3 flex items-center justify-center gap-2">
+                                            <span>🔗</span> View My Public Profile
+                                        </Link>
+                                    </div>
+                                ) : (
+                                    <div className="text-yellow-500 text-sm p-4 bg-yellow-900/20 rounded-xl border border-yellow-700">
+                                        ⚠️ Your public link is being generated. Please contact admin to run the backfill.
+                                    </div>
+                                )}
                             </div>
                         </div>
 
@@ -350,32 +396,56 @@ export default function Dashboard() {
                     </div>
                 )}
 
+                {/* Search & Actions Bar - Moved to Connections Tab */}
+                {activeTab === 'connections' && (
+                    <div className="flex gap-4 mb-8">
+                        <Link href="/search" className="btn btn-outline flex-1 text-center py-4 text-lg font-bold hover:bg-white/10">
+                            🔍 Find People & Add Connections
+                        </Link>
+                    </div>
+                )}
+
+                {/* Pending Requests Section */}
+                {activeTab === 'connections' && (
+                    <RequestsList
+                        requests={connectionsList.filter(c => c.status === 'Pending' && c.direction === 'incoming')}
+                        onRespond={handleRespond}
+                    />
+                )}
+
                 {activeTab === 'connections' && (
                     <div className="glass p-8">
-                        <h2 className="text-2xl font-bold mb-6">People who connected with you</h2>
-                        {connectionsList.length === 0 ? (
-                            <div className="text-gray-500 text-center py-10">No connections yet. Share your profile!</div>
+                        <h2 className="text-2xl font-bold mb-6">Your Network</h2>
+                        {connectionsList.filter(c => c.status === 'Accepted').length === 0 ? (
+                            <div className="text-gray-500 text-center py-10">No active connections.</div>
                         ) : (
                             <div className="grid gap-4">
-                                {connectionsList.map((conn, idx) => (
-                                    <div key={idx} className="bg-white/5 p-4 rounded-xl border border-white/10 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                                        <div>
-                                            <div className="font-bold text-lg">{conn.sourceName || 'Anonymous User'}</div>
-                                            <div className="text-sm text-gray-400">
-                                                {conn.sourceEmail && <span>📧 {conn.sourceEmail}</span>}
-                                                {conn.sourcePhone && <span className="ml-3">📞 {conn.sourcePhone}</span>}
-                                            </div>
-                                            {conn.note && (
-                                                <div className="mt-2 text-sm bg-black/30 p-2 rounded text-gray-300 italic">
-                                                    "{conn.note}"
+                                {connectionsList.filter(c => c.status === 'Accepted').map((conn, idx) => {
+                                    const isIncoming = conn.direction === 'incoming';
+                                    const displayName = conn.name || (isIncoming ? conn.sourceName : (conn.targetEmail || 'Unknown User'));
+                                    const displayEmail = isIncoming ? conn.sourceEmail : conn.targetEmail;
+                                    const displayPhone = isIncoming ? conn.sourcePhone : ''; // We don't have target phone usually
+
+                                    return (
+                                        <div key={idx} className="bg-white/5 p-4 rounded-xl border border-white/10 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                                            <div>
+                                                <div className="font-bold text-lg">{displayName} <span className="text-xs font-normal text-gray-500 ml-2">({isIncoming ? 'Received' : 'Sent'})</span></div>
+                                                <div className="text-sm text-gray-400">
+                                                    {displayEmail && <span>📧 {displayEmail}</span>}
+                                                    {displayPhone && <span className="ml-3">📞 {displayPhone}</span>}
                                                 </div>
-                                            )}
+                                                {conn.note && isIncoming && (
+                                                    <div className="mt-2 text-sm bg-black/30 p-2 rounded text-gray-300 italic">
+                                                        "{conn.note}"
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <div className="text-xs text-gray-500 whitespace-nowrap">
+                                                {new Date(conn.timestamp).toLocaleDateString()}
+                                            </div>
                                         </div>
-                                        <div className="text-xs text-gray-500 whitespace-nowrap">
-                                            {new Date(conn.timestamp).toLocaleDateString()}
-                                        </div>
-                                    </div>
-                                ))}
+                                    );
+                                })}
                             </div>
                         )}
                     </div>

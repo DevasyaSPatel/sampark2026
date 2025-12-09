@@ -1,6 +1,17 @@
+'use client';
+
+import { useState, useEffect } from 'react';
 import Link from "next/link";
 
 export default function Home() {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  useEffect(() => {
+    if (localStorage.getItem('user_id')) {
+      setIsLoggedIn(true);
+    }
+  }, []);
+
   return (
     <div className="min-h-screen">
       {/* Navigation */}
@@ -14,12 +25,20 @@ export default function Home() {
             <Link href="/themes" className="hidden md:block hover:text-primary transition-colors">
               Themes
             </Link>
-            <Link href="/login" className="hover:text-primary transition-colors text-sm md:text-base whitespace-nowrap">
-              Login
-            </Link>
-            <Link href="/register" className="btn btn-primary px-4 py-2 md:px-6 md:py-2 text-xs md:text-sm md:text-base whitespace-nowrap">
-              Register
-            </Link>
+            {isLoggedIn ? (
+              <Link href="/dashboard" className="btn btn-primary px-4 py-2 md:px-6 md:py-2 text-xs md:text-sm md:text-base whitespace-nowrap">
+                Go to Dashboard
+              </Link>
+            ) : (
+              <>
+                <Link href="/login" className="hover:text-primary transition-colors text-sm md:text-base whitespace-nowrap">
+                  Login
+                </Link>
+                <Link href="/register" className="btn btn-primary px-4 py-2 md:px-6 md:py-2 text-xs md:text-sm md:text-base whitespace-nowrap">
+                  Register
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </nav>
