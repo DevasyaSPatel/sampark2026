@@ -40,6 +40,10 @@ export default function Dashboard() {
     const [message, setMessage] = useState('');
     const [connectionsList, setConnectionsList] = useState<Connection[]>([]);
     const [activeTab, setActiveTab] = useState<'profile' | 'connections'>('profile');
+    const [isScanning, setIsScanning] = useState(false);
+    const [nfcError, setNfcError] = useState('');
+    const [showSimulateInput, setShowSimulateInput] = useState(false);
+    const [simulateEmail, setSimulateEmail] = useState('');
 
     useEffect(() => {
         const userId = localStorage.getItem('user_id');
@@ -93,6 +97,92 @@ export default function Dashboard() {
             setTimeout(() => setMessage(''), 3000);
         }
     };
+    const handleSimulateConnect = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!simulateEmail || !user) return;
+
+        await processNfcUrl(simulateEmail); // reuse logic, assuming simulateEmail is just email or full url
+        setShowSimulateInput(false);
+        setSimulateEmail('');
+    };
+
+    const processNfcUrl = async (urlOrEmail: string) => {
+        // Extract email if it's a URL (e.g. https://sampark.../p/email@domain.com)
+        // Or if it's just an email
+        let targetEmail = urlOrEmail;
+        if (urlOrEmail.includes('/p/')) {
+            const parts = urlOrEmail.split('/p/');
+            if (parts.length > 1) {
+                targetEmail = parts[1].split('?')[0]; // simple extraction
+            }
+        }
+
+        // Logic to connect
+        if (!user) return;
+
+        try {
+            const res = await fetch(`/api/users/${targetEmail}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'connect',
+                    sourceEmail: user.id, // I am the source
+                    // sourceName/Phone will be fetched by API from my profile
+                })
+            });
+
+            if (res.ok) {
+                const data = await res.json();
+                setMessage(`Connected with ${targetEmail}! ${data.mutual ? '(Mutual)' : ''}`);
+                // Refresh connections
+                fetch(`/api/users/${user.id}/connections`)
+                    .then(r => r.json())
+                    .then(d => setConnectionsList(d));
+            } else {
+                setNfcError('Failed to connect with found user.');
+                setTimeout(() => setNfcError(''), 3000);
+            }
+        } catch (err) {
+            console.error(err);
+            setNfcError('Connection failed.');
+        }
+    };
+
+    const scanNFC = async () => {
+        if ('NDEFReader' in window) {
+            try {
+                // @ts-ignore
+                const ndef = new window.NDEFReader();
+                setIsScanning(true);
+                setNfcError('Bring tag close to device...');
+                await ndef.scan();
+
+                ndef.onreading = (event: any) => {
+                    const decoder = new TextDecoder();
+                    for (const record of event.message.records) {
+                        if (record.recordType === "url") {
+                            const url = decoder.decode(record.data);
+                            processNfcUrl(url);
+                            setIsScanning(false); // Stop scanning after one success?
+                        }
+                    }
+                };
+
+                ndef.onreadingerror = () => {
+                    setNfcError("Cannot read data from the NFC tag. Try another one?");
+                    setIsScanning(false);
+                };
+
+            } catch (error) {
+                console.log("Error: " + error);
+                setNfcError("NFC Access denied or not supported.");
+                setIsScanning(false);
+            }
+        } else {
+            // Fallback to simulation
+            setShowSimulateInput(true);
+        }
+    };
 
     if (loading) return <div className="min-h-screen flex items-center justify-center">Loading Dashboard...</div>;
 
@@ -103,9 +193,17 @@ export default function Dashboard() {
                     <Link href="/" className="text-2xl font-bold gradient-text">
                         Sampark 2026
                     </Link>
-                    <button onClick={() => { localStorage.removeItem('user_id'); router.push('/'); }} className="text-gray-400 hover:text-white">
-                        Logout
-                    </button>
+                    <div className="flex gap-4 items-center">
+                        <button
+                            onClick={scanNFC}
+                            className={`btn ${isScanning ? 'bg-green-600 animate-pulse' : 'btn-primary'} text-sm px-4 py-2`}
+                        >
+                            {isScanning ? 'Scanning...' : '⚡ Connect via NFC'}
+                        </button>
+                        <button onClick={() => { localStorage.removeItem('user_id'); router.push('/'); }} className="text-gray-400 hover:text-white">
+                            Logout
+                        </button>
+                    </div>
                 </div>
             </nav>
 
@@ -114,8 +212,29 @@ export default function Dashboard() {
                     <div>
                         <h1 className="text-4xl font-bold mb-2">Welcome, {user?.name}</h1>
                         <p className="text-gray-400">Manage your profile and track your networking stats.</p>
+                        {nfcError && <div className="mt-2 text-red-400 bg-red-900/20 p-2 rounded inline-block">{nfcError}</div>}
                     </div>
                 </div>
+
+                {showSimulateInput && (
+                    <div className="text-center mb-6 p-6 bg-white/5 rounded-xl border border-glass-border animate-fade-in">
+                        <h3 className="text-xl font-bold mb-4">NFC Simulation Mode</h3>
+                        <p className="text-gray-400 mb-4 text-sm">Since this device doesn't support Web NFC (or it's not active), enter the target email/link manually to simulate a tap.</p>
+                        <form onSubmit={handleSimulateConnect} className="flex gap-2 max-w-md mx-auto">
+                            <input
+                                type="text"
+                                placeholder="Enter Target Email (e.g. alice@example.com)"
+                                value={simulateEmail}
+                                onChange={e => setSimulateEmail(e.target.value)}
+                                className="flex-1 bg-black/50 border border-white/10 rounded-lg p-3 text-white focus:outline-none"
+                            />
+                            <button type="submit" className="btn btn-primary whitespace-nowrap">
+                                Simulate Tap
+                            </button>
+                            <button type="button" onClick={() => setShowSimulateInput(false)} className="text-gray-400 px-3 hover:text-white">Cancel</button>
+                        </form>
+                    </div>
+                )}
 
                 {/* Tabs */}
                 <div className="flex gap-4 mb-8 border-b border-gray-800">
