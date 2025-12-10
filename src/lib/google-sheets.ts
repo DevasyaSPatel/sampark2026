@@ -246,19 +246,36 @@ export async function getConnectionsCount(email: string) {
     try {
         const response = await sheets.spreadsheets.values.get({
             spreadsheetId: SHEET_ID,
-            range: 'Connections!A:B',
+            range: 'Connections!A:G',
         });
 
         const rows = response.data.values;
         if (!rows || rows.length === 0) return 0;
 
-        // Count where I am the TARGET and Status is 'Accepted'
-        const count = rows.filter((row: string[]) =>
-            (row[1]?.trim() === email.trim()) && (row[6]?.trim() === 'Accepted')
-        ).length;
+        const myEmail = email.trim().toLowerCase();
+        const uniquePartners = new Set<string>();
 
-        return count;
+        rows.forEach((row: string[]) => {
+            const source = row[0]?.trim().toLowerCase();
+            const target = row[1]?.trim().toLowerCase();
+            const status = row[6]?.trim(); // Status is in Column G
+
+            // 1. Participant Check: Am I involved?
+            if (source !== myEmail && target !== myEmail) return;
+
+            // 2. Strict Status Check: Must be 'Accepted'
+            if (status !== 'Accepted') return;
+
+            // 3. Identify Partner
+            const partner = source === myEmail ? target : source;
+
+            // 4. Add to Set (Deduplicates if we have A->B and B->A rows)
+            if (partner) uniquePartners.add(partner);
+        });
+
+        return uniquePartners.size;
     } catch (error) {
+        console.error("Error counting connections:", error);
         return 0;
     }
 }

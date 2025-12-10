@@ -2,7 +2,7 @@
 
 import { useEffect, useState, use } from 'react';
 import { useRouter } from 'next/navigation';
-import { User } from 'lucide-react'; // Fallback icon
+import ParticipantProfileCard from '@/components/ParticipantProfileCard';
 
 // Define types locally if needed or import from a shared types file
 type PublicUser = {
@@ -16,15 +16,17 @@ type PublicUser = {
     // Add other public fields
 };
 
+type ConnectionStatus = 'None' | 'Pending' | 'Accepted';
+
 export default function PublicProfile({ params }: { params: Promise<{ slug: string }> }) {
     const { slug } = use(params);
     const router = useRouter();
-    const [connectionStatus, setConnectionStatus] = useState('None'); // None, Pending, Accepted
+    const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>('None');
     const [profile, setProfile] = useState<PublicUser | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [currentUser, setCurrentUser] = useState<any>(null);
-    const [requestSent, setRequestSent] = useState(false);
+    const [sending, setSending] = useState(false);
 
     useEffect(() => {
         // 1. Fetch Profile
@@ -81,14 +83,12 @@ export default function PublicProfile({ params }: { params: Promise<{ slug: stri
 
 
     const handleConnect = async () => {
+        setSending(true);
+
         if (!currentUser) {
-            const userId = localStorage.getItem('user_id');
-            if (userId) {
-                setCurrentUser({ email: userId });
-            } else {
-                router.push('/login');
-                return;
-            }
+            // This is primarily handled by the component now, but keep as fallback
+            router.push('/login');
+            return;
         }
 
         try {
@@ -114,76 +114,50 @@ export default function PublicProfile({ params }: { params: Promise<{ slug: stri
         } catch (e) {
             console.error(e);
             alert('Error sending request: Network or Server Error');
+        } finally {
+            setSending(false);
         }
     };
 
     if (loading) return <div className="min-h-screen flex items-center justify-center text-white">Loading...</div>;
     if (error || !profile) return <div className="min-h-screen flex items-center justify-center text-red-400">{error}</div>;
 
-    const getButtonContent = () => {
-        if (connectionStatus === 'Accepted') {
-            return (
-                <button disabled className="w-full py-4 bg-green-600 text-white font-bold text-xl uppercase tracking-widest border-[3px] border-black rounded-lg cursor-default opacity-90">
-                    CONNECTED
-                </button>
-            );
-        }
-        if (connectionStatus === 'Pending' || requestSent) { // requestSent fallback
-            return (
-                <button disabled className="w-full py-4 bg-zinc-700 text-white font-bold text-xl uppercase tracking-widest border-[3px] border-black rounded-lg cursor-not-allowed opacity-80">
-                    REQUEST SENT
-                </button>
-            );
-        }
-        return (
-            <button
-                onClick={handleConnect}
-                className="w-full py-4 bg-[#a64ca6] hover:bg-[#943d94] text-black font-bold text-xl uppercase tracking-widest border-[3px] border-black rounded-lg transition-colors"
-            >
-                CONNECT
-            </button>
-        );
+    const isLoggedIn = !!currentUser;
+
+    // Adapt profile to component User type
+    const cardUser = {
+        id: profile.id,
+        name: profile.name,
+        theme: profile.theme,
+        connections: profile.connections || 0,
+        bio: profile.bio
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center relative overflow-hidden bg-[#7895cb]">
+        <div className="min-h-screen flex items-center justify-center relative overflow-hidden bg-[#0a0a0a]">
+            {/* Background Effects matching other page for consistency */}
+            <div className="absolute top-0 left-0 w-full h-full overflow-hidden -z-10">
+                <div className="absolute top-[-20%] left-[-10%] w-[60%] h-[60%] bg-purple-900/20 blur-[120px] rounded-full"></div>
+                <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-blue-900/10 blur-[100px] rounded-full"></div>
+            </div>
+
             {/* Nav */}
             <nav className="fixed top-0 w-full z-50 px-4 md:px-6 py-4 flex justify-between items-center bg-transparent">
-                <div className="text-xl font-bold text-black/80">Sampark 2026</div>
-                <button onClick={() => router.push(currentUser ? '/dashboard' : '/login')} className="text-sm font-bold text-black border-2 border-black px-4 py-1.5 rounded-full hover:bg-black hover:text-white transition-all uppercase">
+                <div className="text-xl font-bold text-white">Sampark 2026</div>
+                <button onClick={() => router.push(currentUser ? '/dashboard' : '/login')} className="text-sm font-bold text-blue-300 hover:text-blue-200 border border-white/20 px-4 py-1.5 rounded-full hover:bg-white/10 transition-all uppercase">
                     {currentUser ? 'Dashboard' : 'Login'}
                 </button>
             </nav>
 
             {/* Profile Card */}
-            <div className="w-full max-w-md mx-4 relative">
-                {/* Card Shadow Element for 3D effect */}
-                <div className="absolute inset-0 translate-x-3 translate-y-3 bg-black rounded-lg" />
-
-                <div className="relative bg-[#8f8f8f] border-[3px] border-black rounded-lg p-12 flex flex-col items-center gap-8 text-center shadow-none">
-
-                    {/* Username */}
-                    <h1 className="text-4xl font-black text-black uppercase tracking-tighter shadow-none">
-                        {profile.name}
-                    </h1>
-
-                    {/* Connection Count */}
-                    <div className="flex flex-col items-center gap-1">
-                        <span className="text-4xl font-bold text-black">{profile.connections || 0}</span>
-                        <span className="text-lg font-bold text-black/80 tracking-wide">Connections</span>
-                    </div>
-
-                    {/* Connect Button */}
-                    <div className="w-full pt-8">
-                        {getButtonContent()}
-
-                        {!currentUser && (
-                            <p className="mt-4 text-xs font-bold text-black/60 uppercase cursor-pointer hover:text-black hover:underline" onClick={() => router.push('/login')}>
-                                Login to Connect
-                            </p>
-                        )}
-                    </div>
-                </div>
+            <div className="w-full flex justify-center p-4">
+                <ParticipantProfileCard
+                    user={cardUser}
+                    isLoggedIn={isLoggedIn}
+                    connectionStatus={connectionStatus}
+                    isLoading={sending}
+                    onConnect={handleConnect}
+                />
             </div>
         </div>
     );

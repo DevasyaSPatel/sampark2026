@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
 import RequestsList from '@/components/RequestsList';
+import { useConnectionLogic } from '@/hooks/useConnectionLogic'; // Import the new hook
 
 type User = {
     id: string;
@@ -17,19 +18,19 @@ type User = {
     linkedin: string;
     instagram: string;
     github: string;
-    slug: string; // Added slug
+    slug: string;
 };
 
 type Connection = {
     sourceName: string;
     sourceEmail: string;
-    targetEmail?: string; // Added targetEmail
+    targetEmail?: string;
     sourcePhone: string;
     note: string;
     timestamp: string;
     status: string;
     direction?: 'incoming' | 'outgoing';
-    name?: string; // Resolved name from backend
+    name?: string;
 };
 
 export default function Dashboard() {
@@ -51,6 +52,9 @@ export default function Dashboard() {
     const [nfcError, setNfcError] = useState('');
     const [showSimulateInput, setShowSimulateInput] = useState(false);
     const [simulateEmail, setSimulateEmail] = useState('');
+
+    // Use the robust hook for filtering
+    const { acceptedConnections, incomingRequests, sentRequests } = useConnectionLogic(connectionsList);
 
     useEffect(() => {
         const userId = localStorage.getItem('user_id');
@@ -108,23 +112,20 @@ export default function Dashboard() {
         e.preventDefault();
         if (!simulateEmail || !user) return;
 
-        await processNfcUrl(simulateEmail); // reuse logic, assuming simulateEmail is just email or full url
+        await processNfcUrl(simulateEmail);
         setShowSimulateInput(false);
         setSimulateEmail('');
     };
 
     const processNfcUrl = async (urlOrEmail: string) => {
-        // Extract email if it's a URL (e.g. https://sampark.../p/email@domain.com)
-        // Or if it's just an email
         let targetEmail = urlOrEmail;
         if (urlOrEmail.includes('/p/')) {
             const parts = urlOrEmail.split('/p/');
             if (parts.length > 1) {
-                targetEmail = parts[1].split('?')[0]; // simple extraction
+                targetEmail = parts[1].split('?')[0];
             }
         }
 
-        // Logic to connect
         if (!user) return;
 
         try {
@@ -133,8 +134,7 @@ export default function Dashboard() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     action: 'connect',
-                    sourceEmail: user.id, // I am the source
-                    // sourceName/Phone will be fetched by API from my profile
+                    sourceEmail: user.id,
                 })
             });
 
@@ -162,8 +162,8 @@ export default function Dashboard() {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    sourceEmail: sourceEmail, // The person who requested
-                    targetEmail: user.id,     // Me
+                    sourceEmail: sourceEmail,
+                    targetEmail: user.id,
                     status
                 })
             });
@@ -198,7 +198,7 @@ export default function Dashboard() {
                         if (record.recordType === "url") {
                             const url = decoder.decode(record.data);
                             processNfcUrl(url);
-                            setIsScanning(false); // Stop scanning after one success?
+                            setIsScanning(false);
                         }
                     }
                 };
@@ -214,7 +214,6 @@ export default function Dashboard() {
                 setIsScanning(false);
             }
         } else {
-            // No NFC Support
             setNfcError("NFC is not supported on this device or browser.");
             setTimeout(() => setNfcError(''), 3000);
         }
@@ -284,7 +283,7 @@ export default function Dashboard() {
                         onClick={() => setActiveTab('connections')}
                         className={`pb-3 px-2 ${activeTab === 'connections' ? 'text-blue-400 border-b-2 border-blue-400' : 'text-gray-500'}`}
                     >
-                        My Connections ({connectionsList.length})
+                        My Connections ({acceptedConnections.length})
                     </button>
                 </div>
 
@@ -293,7 +292,7 @@ export default function Dashboard() {
                         <div className="glass p-8 h-fit">
                             <h2 className="text-2xl font-bold mb-6">Live Stats</h2>
                             <div className="text-center p-6 bg-white/5 rounded-xl border border-glass-border">
-                                <div className="text-5xl font-bold gradient-text mb-2">{connectionsList.length}</div>
+                                <div className="text-5xl font-bold gradient-text mb-2">{acceptedConnections.length}</div>
                                 <div className="text-gray-400 uppercase tracking-widest text-sm">Connections</div>
                             </div>
 
@@ -320,8 +319,8 @@ export default function Dashboard() {
                         <div className="glass p-8">
                             <h2 className="text-2xl font-bold mb-6">Update Profile</h2>
                             {message && <div className="bg-green-500/20 text-green-400 p-3 rounded-lg mb-4 text-center">{message}</div>}
-
                             <form onSubmit={handleUpdate} className="flex flex-col gap-4">
+                                {/* Form fields same as before... truncated for brevity in thought but needs to be in tool */}
                                 <div>
                                     <label className="block text-sm text-gray-400 mb-2">Full Name</label>
                                     <input
@@ -331,47 +330,41 @@ export default function Dashboard() {
                                         className="w-full bg-black/50 border border-glass-border rounded-lg p-3 text-white focus:outline-none focus:border-primary"
                                     />
                                 </div>
-
-                                {/* Socials */}
                                 <div className="grid grid-cols-3 gap-2">
                                     <div>
                                         <label className="block text-xs text-gray-400 mb-2">LinkedIn URL</label>
                                         <input
                                             type="text"
-                                            placeholder="https://linkedin.com/in/..."
                                             value={formData.linkedin}
                                             onChange={(e) => setFormData({ ...formData, linkedin: e.target.value })}
-                                            className="w-full bg-black/50 border border-glass-border rounded-lg p-3 text-sm text-white focus:outline-none focus:border-primary"
+                                            className="w-full bg-black/50 border border-glass-border rounded-lg p-3 text-sm text-white focus:outline-none"
                                         />
                                     </div>
                                     <div>
                                         <label className="block text-xs text-gray-400 mb-2">Instagram URL</label>
                                         <input
                                             type="text"
-                                            placeholder="https://instagram.com/..."
                                             value={formData.instagram}
                                             onChange={(e) => setFormData({ ...formData, instagram: e.target.value })}
-                                            className="w-full bg-black/50 border border-glass-border rounded-lg p-3 text-sm text-white focus:outline-none focus:border-primary"
+                                            className="w-full bg-black/50 border border-glass-border rounded-lg p-3 text-sm text-white focus:outline-none"
                                         />
                                     </div>
                                     <div>
                                         <label className="block text-xs text-gray-400 mb-2">GitHub URL</label>
                                         <input
                                             type="text"
-                                            placeholder="https://github.com/..."
                                             value={formData.github}
                                             onChange={(e) => setFormData({ ...formData, github: e.target.value })}
-                                            className="w-full bg-black/50 border border-glass-border rounded-lg p-3 text-sm text-white focus:outline-none focus:border-primary"
+                                            className="w-full bg-black/50 border border-glass-border rounded-lg p-3 text-sm text-white focus:outline-none"
                                         />
                                     </div>
                                 </div>
-
                                 <div>
                                     <label className="block text-sm text-gray-400 mb-2">Interested Theme</label>
                                     <select
                                         value={formData.theme}
                                         onChange={(e) => setFormData({ ...formData, theme: e.target.value })}
-                                        className="w-full bg-black/50 border border-glass-border rounded-lg p-3 text-white focus:outline-none focus:border-primary"
+                                        className="w-full bg-black/50 border border-glass-border rounded-lg p-3 text-white focus:outline-none"
                                     >
                                         <option value="AI Agents">AI Agents</option>
                                         <option value="Green Tech">Green Tech</option>
@@ -385,7 +378,7 @@ export default function Dashboard() {
                                     <textarea
                                         value={formData.bio}
                                         onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
-                                        className="w-full bg-black/50 border border-glass-border rounded-lg p-3 text-white focus:outline-none focus:border-primary h-24"
+                                        className="w-full bg-black/50 border border-glass-border rounded-lg p-3 text-white focus:outline-none h-24"
                                     />
                                 </div>
                                 <button type="submit" className="btn btn-primary mt-2">
@@ -405,31 +398,49 @@ export default function Dashboard() {
                     </div>
                 )}
 
-                {/* Pending Requests Section */}
+                {/* Incoming Requests Section */}
                 {activeTab === 'connections' && (
                     <RequestsList
-                        requests={connectionsList.filter(c => c.status === 'Pending' && c.direction === 'incoming')}
+                        requests={incomingRequests}
                         onRespond={handleRespond}
                     />
+                )}
+
+                {/* Sent Requests Section (Optional) */}
+                {activeTab === 'connections' && sentRequests.length > 0 && (
+                    <div className="mb-8 opacity-70">
+                        <h3 className="text-lg font-bold mb-4 text-gray-400 ml-2">Sent Requests ({sentRequests.length})</h3>
+                        <div className="grid gap-4">
+                            {sentRequests.map((req, idx) => (
+                                <div key={idx} className="bg-white/5 p-4 rounded-xl border border-white/5 flex justify-between items-center">
+                                    <div>
+                                        <div className="font-bold">{req.name || req.targetEmail}</div>
+                                        <div className="text-xs text-gray-500">Status: Sent / Pending</div>
+                                    </div>
+                                    <div className="text-xs text-gray-600">Waiting...</div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
                 )}
 
                 {activeTab === 'connections' && (
                     <div className="glass p-8">
                         <h2 className="text-2xl font-bold mb-6">Your Network</h2>
-                        {connectionsList.filter(c => c.status === 'Accepted').length === 0 ? (
+                        {acceptedConnections.length === 0 ? (
                             <div className="text-gray-500 text-center py-10">No active connections.</div>
                         ) : (
                             <div className="grid gap-4">
-                                {connectionsList.filter(c => c.status === 'Accepted').map((conn, idx) => {
+                                {acceptedConnections.map((conn, idx) => {
                                     const isIncoming = conn.direction === 'incoming';
                                     const displayName = conn.name || (isIncoming ? conn.sourceName : (conn.targetEmail || 'Unknown User'));
                                     const displayEmail = isIncoming ? conn.sourceEmail : conn.targetEmail;
-                                    const displayPhone = isIncoming ? conn.sourcePhone : ''; // We don't have target phone usually
+                                    const displayPhone = isIncoming ? conn.sourcePhone : '';
 
                                     return (
-                                        <div key={idx} className="bg-white/5 p-4 rounded-xl border border-white/10 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                                        <div key={idx} className="bg-white/5 p-4 rounded-xl border border-white/10 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 hover:bg-white/10 transition-colors">
                                             <div>
-                                                <div className="font-bold text-lg">{displayName} <span className="text-xs font-normal text-gray-500 ml-2">({isIncoming ? 'Received' : 'Sent'})</span></div>
+                                                <div className="font-bold text-lg">{displayName}</div>
                                                 <div className="text-sm text-gray-400">
                                                     {displayEmail && <span>📧 {displayEmail}</span>}
                                                     {displayPhone && <span className="ml-3">📞 {displayPhone}</span>}
@@ -441,7 +452,7 @@ export default function Dashboard() {
                                                 )}
                                             </div>
                                             <div className="text-xs text-gray-500 whitespace-nowrap">
-                                                {new Date(conn.timestamp).toLocaleDateString()}
+                                                Connected: {new Date(conn.timestamp).toLocaleDateString()}
                                             </div>
                                         </div>
                                     );
