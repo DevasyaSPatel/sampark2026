@@ -385,6 +385,7 @@ export async function getUser(email: string) {
                 instagram: userRow[14] || '',
                 github: userRow[15] || '',
                 slug: userRow[16] || '',
+                participationType: userRow[8] || '', // Column I
                 connections: connections,
             };
         }
@@ -460,6 +461,7 @@ export async function getUserBySlug(slug: string) {
                 instagram: userRow[14] || '',
                 github: userRow[15] || '',
                 slug: userRow[16] || '',
+                participationType: userRow[8] || '',
                 connections: connectionsCount,
             };
         }
