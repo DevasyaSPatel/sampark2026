@@ -2,10 +2,25 @@
 
 import { useState, useMemo } from 'react';
 import Link from 'next/link';
+import styles from './Admin.module.css';
+import {
+    Users,
+    Clock,
+    CheckCircle,
+    Search,
+    Edit2,
+    Check,
+    X,
+    ShieldCheck,
+    LogOut
+} from 'lucide-react';
 
 export default function AdminDashboard() {
+    // Auth State
     const [password, setPassword] = useState('');
     const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+    // Data State
     const [users, setUsers] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
     const [actionLoading, setActionLoading] = useState<string | null>(null);
@@ -14,6 +29,7 @@ export default function AdminDashboard() {
     // Edit State
     const [editingUser, setEditingUser] = useState<any | null>(null);
 
+    // --- Authentication ---
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
@@ -24,10 +40,11 @@ export default function AdminDashboard() {
                 setUsers(data.users);
                 setIsLoggedIn(true);
             } else {
-                alert('Invalid Password');
+                alert('Invalid Access Key');
             }
         } catch (error) {
-            alert('Error logging in');
+            console.error(error);
+            alert('Connection Error');
         } finally {
             setLoading(false);
         }
@@ -41,8 +58,9 @@ export default function AdminDashboard() {
         }
     };
 
+    // --- Actions ---
     const handleApprove = async (user: any) => {
-        if (!confirm(`Approve ${user.name} and send email?`)) return;
+        if (!confirm(`Approve ${user.name}? This will send a confirmation email.`)) return;
 
         setActionLoading(user.email);
         try {
@@ -58,13 +76,16 @@ export default function AdminDashboard() {
             });
 
             if (res.ok) {
-                alert('Approved & Email Sent!');
+                // Optimistic Update
+                setUsers(prev => prev.map(u => u.email === user.email ? { ...u, status: 'Approved' } : u));
+                alert(`✅ User Approved: ${user.name}`);
                 refreshData();
             } else {
                 alert('Failed to approve');
             }
         } catch (error) {
-            alert('Error approving');
+            console.error(error);
+            alert('System Error');
         } finally {
             setActionLoading(null);
         }
@@ -100,11 +121,11 @@ export default function AdminDashboard() {
             });
 
             if (res.ok) {
-                alert('User Updated!');
+                alert('✅ User Saved');
                 setEditingUser(null);
                 refreshData();
             } else {
-                alert('Failed to update');
+                alert('Save failed');
             }
         } catch (error) {
             alert('Error updating');
@@ -113,6 +134,7 @@ export default function AdminDashboard() {
         }
     };
 
+    // --- Derived Data ---
     const filteredUsers = useMemo(() => {
         return users.filter(u =>
             u.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -122,171 +144,214 @@ export default function AdminDashboard() {
 
     const stats = useMemo(() => ({
         total: users.length,
+        // Status in sheet is often 'Pending', 'Approved' (sometimes 'Accepted'? Let's handle both)
         pending: users.filter(u => u.status === 'Pending').length,
-        approved: users.filter(u => u.status === 'Approved').length
+        approved: users.filter(u => u.status === 'Approved' || u.status === 'Accepted').length
     }), [users]);
 
 
+    // --- View: Login ---
     if (!isLoggedIn) {
         return (
-            <div className="min-h-screen flex items-center justify-center relative px-4 pt-20">
-                {/* Background Effects */}
-                <div className="absolute inset-0 z-0 overflow-hidden">
-                    <div className="absolute top-0 right-0 w-1/2 h-1/2 bg-purple-600 opacity-20 blur-[120px] rounded-full"></div>
-                    <div className="absolute bottom-0 left-0 w-1/3 h-1/3 bg-blue-600 opacity-20 blur-[100px] rounded-full"></div>
-                </div>
+            <div className={styles.loginOverlay}>
+                <div className={styles.loginCard}>
+                    <ShieldCheck size={48} className="text-[#8A2BE2] mx-auto mb-6" />
+                    <h1 className="text-2xl font-bold text-white mb-2">Admin Command</h1>
+                    <p className="text-[#A0AEC0] mb-8 text-sm">Restricted Access Protocol</p>
 
-                {/* Navigation */}
-                <nav className="fixed top-0 left-0 w-full p-4 md:p-6 flex justify-between items-center bg-transparent z-50">
-                    <Link href="/" className="text-lg md:text-xl font-bold hover:text-primary transition-colors">
-                        Sampark 2026
-                    </Link>
-                    <Link href="/" className="px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 transition-all text-xs md:text-sm border border-white/10">
-                        ← Home
-                    </Link>
-                </nav>
-
-                <div className="glass p-8 md:p-12 w-full max-w-md z-10">
-                    <h1 className="text-3xl font-bold mb-2 text-center text-white">Admin Access</h1>
-                    <p className="text-gray-400 text-center mb-8">Restricted Area</p>
-
-                    <form onSubmit={handleLogin} className="flex flex-col gap-6">
-                        <div>
-                            <label className="block text-sm text-gray-400 mb-2">Access Key</label>
-                            <input
-                                type="password"
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                className="w-full bg-black/50 border border-glass-border rounded-lg p-3 text-white text-center tracking-widest focus:outline-none focus:border-primary transition-colors"
-                                placeholder="••••••••"
-                            />
-                        </div>
-
-                        <button disabled={loading} className="btn btn-primary w-full py-3">
-                            {loading ? 'Verifying...' : 'Unlock Panel'}
+                    <form onSubmit={handleLogin}>
+                        <input
+                            type="password"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            className={styles.loginInput}
+                            placeholder="ACCESS KEY"
+                            autoFocus
+                        />
+                        <button disabled={loading} className={styles.loginBtn}>
+                            {loading ? 'AUTHENTICATING...' : 'ENTER CONSOLE'}
                         </button>
                     </form>
+
+                    <div className="mt-8">
+                        <Link href="/" className="text-xs text-[#A0AEC0] hover:text-white transition-colors">
+                            ← Return to Public Zone
+                        </Link>
+                    </div>
                 </div>
             </div>
         );
     }
 
+    // --- View: Dashboard ---
     return (
-        <div className="min-h-screen pt-24 px-6 pb-20 text-white relative">
-            <div className="absolute inset-0 z-0 bg-black"></div>
-            {/* Main Content */}
-            <div className="relative z-10 container mx-auto max-w-7xl">
-                <div className="flex flex-col md:flex-row justify-between items-center mb-10 gap-4">
-                    <h1 className="text-4xl font-bold gradient-text">Admin Dashboard</h1>
-                    <button onClick={() => setIsLoggedIn(false)} className="text-sm text-gray-500 hover:text-white">Logout</button>
+        <div className={styles.pageContainer}>
+            {/* Header */}
+            <nav className={styles.navBar}>
+                <div className={styles.brand}>
+                    <ShieldCheck size={24} color="#8A2BE2" />
+                    <span>SAMPARK ADMIN</span>
+                </div>
+                <button onClick={() => setIsLoggedIn(false)} className="text-[#A0AEC0] hover:text-white flex items-center gap-2 text-sm font-medium transition-colors">
+                    <LogOut size={16} /> Logout
+                </button>
+            </nav>
+
+            <main className={styles.mainContent}>
+                {/* Stats Row */}
+                <div className={styles.statsGrid}>
+                    <div className={`${styles.statCard} ${styles.active1}`}>
+                        <div className={styles.statIconWrapper}><Users size={24} /></div>
+                        <div className={styles.statContent}>
+                            <h4>Total Users</h4>
+                            <p>{stats.total}</p>
+                        </div>
+                    </div>
+
+                    <div className={`${styles.statCard} ${styles.active2}`}>
+                        <div className={styles.statIconWrapper}><Clock size={24} /></div>
+                        <div className={styles.statContent}>
+                            <h4>Pending Action</h4>
+                            <p>{stats.pending}</p>
+                        </div>
+                    </div>
+
+                    <div className={`${styles.statCard} ${styles.active3}`}>
+                        <div className={styles.statIconWrapper}><CheckCircle size={24} /></div>
+                        <div className={styles.statContent}>
+                            <h4>Approved</h4>
+                            <p>{stats.approved}</p>
+                        </div>
+                    </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-                    <div className="glass p-6 text-center">
-                        <h3 className="text-gray-400 text-sm mb-2">Total Registrations</h3>
-                        <p className="text-4xl font-bold">{stats.total}</p>
-                    </div>
-                    <div className="glass p-6 text-center border-yellow-500/30">
-                        <h3 className="text-yellow-400 text-sm mb-2">Pending Approval</h3>
-                        <p className="text-4xl font-bold text-yellow-500">{stats.pending}</p>
-                    </div>
-                    <div className="glass p-6 text-center border-green-500/30">
-                        <h3 className="text-green-400 text-sm mb-2">Approved Members</h3>
-                        <p className="text-4xl font-bold text-green-500">{stats.approved}</p>
-                    </div>
-                </div>
+                {/* Main Table */}
+                <div className={styles.tableContainer}>
+                    <div className={styles.tableHeader}>
+                        <h2 className={styles.tableTitle}>Member Management</h2>
 
-                <div className="flex justify-between items-center mb-6">
-                    <input
-                        type="text"
-                        placeholder="Search by name or email..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="glass px-4 py-2 w-full max-w-md bg-transparent text-white focus:outline-none focus:border-primary"
-                    />
-                </div>
+                        <div className={styles.searchBar}>
+                            <Search size={16} color="#A0AEC0" />
+                            <input
+                                type="text"
+                                className={styles.searchInput}
+                                placeholder="Search members..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                            />
+                        </div>
+                    </div>
 
-                <div className="glass overflow-hidden rounded-xl border border-glass-border">
-                    <table className="w-full text-left border-collapse">
-                        <thead className="bg-white/10 text-white">
-                            <tr className="border-b border-glass-border uppercase text-xs tracking-wider">
-                                <th className="p-4 font-semibold">Name</th>
-                                <th className="p-4 font-semibold">Email</th>
-                                <th className="p-4 font-semibold">Phone</th>
-                                <th className="p-4 font-semibold">Theme</th>
-                                <th className="p-4 font-semibold">Status</th>
-                                <th className="p-4 font-semibold text-right">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-white/10">
-                            {filteredUsers.map((user, i) => (
-                                <tr key={i} className="hover:bg-white/5 transition-colors">
-                                    <td className="p-4 font-medium text-white">{user.name}</td>
-                                    <td className="p-4 text-gray-400 text-sm whitespace-nowrap">{user.email}</td>
-                                    <td className="p-4 text-gray-400 text-sm whitespace-nowrap">{user.phone}</td>
-                                    <td className="p-4"><span className="px-2 py-1 bg-blue-500/20 text-blue-300 rounded text-xs whitespace-nowrap">{user.theme}</span></td>
-                                    <td className="p-4">
-                                        <span className={`px-2 py-1 rounded text-xs font-semibold whitespace-nowrap ${user.status === 'Approved' ? 'bg-green-500/20 text-green-400' :
-                                            user.status === 'Rejected' ? 'bg-red-500/20 text-red-400' :
-                                                'bg-yellow-500/20 text-yellow-400'
-                                            }`}>
-                                            {user.status}
-                                        </span>
-                                    </td>
-                                    <td className="p-4">
-                                        <div className="flex justify-end gap-4 items-center whitespace-nowrap">
-                                            <button
-                                                onClick={() => setEditingUser(user)}
-                                                className="px-3 py-1.5 text-xs bg-white/10 hover:bg-white/20 rounded transition text-white"
-                                            >
-                                                Edit
-                                            </button>
-                                            {user.status !== 'Approved' && (
-                                                <button
-                                                    onClick={() => handleApprove(user)}
-                                                    disabled={!!actionLoading}
-                                                    className="px-3 py-1.5 text-xs bg-primary hover:bg-blue-600 text-white rounded transition disabled:opacity-50"
-                                                >
-                                                    {actionLoading === user.email ? 'Sending...' : 'Approve'}
-                                                </button>
-                                            )}
-                                        </div>
-                                    </td>
+                    <div className={styles.tableWrapper}>
+                        <table className={styles.table}>
+                            <thead>
+                                <tr>
+                                    <th>User Identity</th>
+                                    <th>Registered Theme</th>
+                                    <th>Status</th>
+                                    <th style={{ textAlign: 'right' }}>Actions</th>
                                 </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                    {filteredUsers.length === 0 && (
-                        <div className="p-8 text-center text-gray-500">
-                            No users found.
-                        </div>
-                    )}
-                </div>
-            </div>
+                            </thead>
+                            <tbody>
+                                {filteredUsers.map((user, i) => {
+                                    const isPending = user.status === 'Pending';
+                                    const isApproved = user.status === 'Approved' || user.status === 'Accepted';
+                                    const statusClass = isApproved ? styles.approved : isPending ? styles.pending : styles.rejected;
 
+                                    return (
+                                        <tr key={i}>
+                                            <td>
+                                                <div className={styles.userCell}>
+                                                    <span className={styles.userName}>{user.name}</span>
+                                                    <span className={styles.userEmail}>{user.email}</span>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <span className="text-sm text-gray-300">{user.theme || '—'}</span>
+                                            </td>
+                                            <td>
+                                                <span className={`${styles.statusPill} ${statusClass}`}>
+                                                    {isApproved ? 'Approved' : user.status}
+                                                </span>
+                                            </td>
+                                            <td style={{ textAlign: 'right' }}>
+                                                <div className="flex justify-end gap-2">
+                                                    <button
+                                                        onClick={() => setEditingUser(user)}
+                                                        className={`${styles.actionBtn} ${styles.edit}`}
+                                                        title="Edit User"
+                                                    >
+                                                        <Edit2 size={18} />
+                                                    </button>
+
+                                                    {isPending && (
+                                                        <button
+                                                            onClick={() => handleApprove(user)}
+                                                            disabled={!!actionLoading}
+                                                            className={`${styles.actionBtn} ${styles.approve}`}
+                                                            title="Approve User"
+                                                        >
+                                                            {actionLoading === user.email ? (
+                                                                <Clock size={18} className="animate-spin" />
+                                                            ) : (
+                                                                <Check size={18} />
+                                                            )}
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
+
+                        {filteredUsers.length === 0 && (
+                            <div className="p-10 text-center text-[#A0AEC0]">
+                                No members found matching your search.
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </main>
+
+            {/* Edit Modal */}
             {editingUser && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-                    <div className="glass p-8 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+                <div className={styles.modalOverlay}>
+                    <div className={styles.modalContent}>
                         <div className="flex justify-between items-center mb-6">
-                            <h2 className="text-2xl font-bold">Edit User</h2>
-                            <button onClick={() => setEditingUser(null)} className="text-gray-400 hover:text-white">&times;</button>
+                            <h2 className="text-xl font-bold text-white">Edit Member</h2>
+                            <button onClick={() => setEditingUser(null)} className="text-[#A0AEC0] hover:text-white">
+                                <X size={24} />
+                            </button>
                         </div>
+
                         <form onSubmit={handleUpdate} className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div className="md:col-span-2">
-                                <label className="text-xs text-gray-400">Full Name</label>
-                                <input className="w-full glass p-2 mt-1 text-white" value={editingUser.name} onChange={(e) => setEditingUser({ ...editingUser, name: e.target.value })} />
+                                <label className="text-xs uppercase text-[#A0AEC0] mb-1 block">Full Name</label>
+                                <input
+                                    className="w-full bg-[#121212] border border-[#2D2D3A] rounded-lg p-3 text-white focus:border-[#8A2BE2] outline-none"
+                                    value={editingUser.name}
+                                    onChange={(e) => setEditingUser({ ...editingUser, name: e.target.value })}
+                                />
                             </div>
+
                             <div>
-                                <label className="text-xs text-gray-400">Email</label>
-                                <input className="w-full glass p-2 mt-1 text-white" value={editingUser.email} onChange={(e) => setEditingUser({ ...editingUser, email: e.target.value })} />
+                                <label className="text-xs uppercase text-[#A0AEC0] mb-1 block">Email</label>
+                                <input
+                                    className="w-full bg-[#121212] border border-[#2D2D3A] rounded-lg p-3 text-white focus:border-[#8A2BE2] outline-none"
+                                    value={editingUser.email}
+                                    onChange={(e) => setEditingUser({ ...editingUser, email: e.target.value })}
+                                />
                             </div>
+
                             <div>
-                                <label className="text-xs text-gray-400">Phone</label>
-                                <input className="w-full glass p-2 mt-1 text-white" value={editingUser.phone} onChange={(e) => setEditingUser({ ...editingUser, phone: e.target.value })} />
-                            </div>
-                            <div>
-                                <label className="text-xs text-gray-400">Theme</label>
-                                <select className="w-full glass p-2 mt-1 text-white bg-black/80" value={editingUser.theme} onChange={(e) => setEditingUser({ ...editingUser, theme: e.target.value })}>
+                                <label className="text-xs uppercase text-[#A0AEC0] mb-1 block">Theme</label>
+                                <select
+                                    className="w-full bg-[#121212] border border-[#2D2D3A] rounded-lg p-3 text-white focus:border-[#8A2BE2] outline-none appearance-none"
+                                    value={editingUser.theme}
+                                    onChange={(e) => setEditingUser({ ...editingUser, theme: e.target.value })}
+                                >
                                     <option>AI Agents</option>
                                     <option>Green Tech</option>
                                     <option>Blockchain</option>
@@ -294,14 +359,12 @@ export default function AdminDashboard() {
                                     <option>Management</option>
                                 </select>
                             </div>
-                            <div>
-                                <label className="text-xs text-gray-400">Year</label>
-                                <input className="w-full glass p-2 mt-1 text-white" value={editingUser.year} onChange={(e) => setEditingUser({ ...editingUser, year: e.target.value })} />
-                            </div>
 
-                            <div className="md:col-span-2 mt-4 flex gap-3 justify-end">
-                                <button type="button" onClick={() => setEditingUser(null)} className="px-4 py-2 rounded bg-white/10 hover:bg-white/20">Cancel</button>
-                                <button type="submit" disabled={!!actionLoading} className="btn btn-primary px-6 py-2">
+                            <div className="md:col-span-2 mt-6 flex gap-4">
+                                <button type="button" onClick={() => setEditingUser(null)} className="flex-1 py-3 rounded-lg bg-[#2D2D3A] text-white font-semibold hover:bg-[#3E3E4A] transition">
+                                    Cancel
+                                </button>
+                                <button type="submit" disabled={!!actionLoading} className="flex-1 py-3 rounded-lg bg-[#8A2BE2] text-white font-semibold hover:bg-[#7c26cb] transition">
                                     {actionLoading === 'editing' ? 'Saving...' : 'Save Changes'}
                                 </button>
                             </div>
