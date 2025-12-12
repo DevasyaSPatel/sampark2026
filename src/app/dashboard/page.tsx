@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
+import Navbar from '@/components/Navbar';
 import RequestsList from '@/components/RequestsList';
 import { useConnectionLogic } from '@/hooks/useConnectionLogic'; // Import the new hook
 
@@ -219,152 +220,142 @@ export default function Dashboard() {
         }
     };
 
-    if (loading) return <div className="min-h-screen flex items-center justify-center">Loading Dashboard...</div>;
+    if (loading) return <div className="min-h-screen flex items-center justify-center bg-gray-50 text-gray-500">Loading Dashboard...</div>;
 
     return (
-        <div className="min-h-screen pt-20 px-6">
-            <nav className="glass fixed top-0 left-0 w-full z-50 px-6 py-4">
-                <div className="container flex justify-between items-center">
-                    <Link href="/" className="text-2xl font-bold gradient-text">
-                        Sampark 2026
-                    </Link>
-                    <div className="flex gap-4 items-center">
+        <div className="min-h-screen pt-20 px-4 md:px-8 bg-gray-50 font-sans">
+            <Navbar isLoggedIn={true} />
+
+            <div className="max-w-6xl mx-auto mt-10">
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 gap-4">
+                    <div>
+                        <h1 className="text-3xl font-bold text-ieee-navy mb-2">Welcome, {user?.name}</h1>
+                        <p className="text-gray-500">Manage your profile and track your networking stats.</p>
+                        {nfcError && <div className="mt-2 text-red-600 bg-red-50 p-2 rounded border border-red-200 text-sm font-medium">{nfcError}</div>}
+                    </div>
+                    <div className="flex gap-3">
                         <button
                             onClick={scanNFC}
-                            className={`btn ${isScanning ? 'bg-green-600 animate-pulse' : 'btn-primary'} text-sm px-4 py-2`}
+                            className={`px-4 py-2 rounded-lg font-semibold text-white shadow-md transition-all ${isScanning ? 'bg-green-600 animate-pulse' : 'bg-ieee-warning hover:bg-amber-600'}`}
                         >
                             {isScanning ? 'Scanning...' : '⚡ Connect via NFC'}
                         </button>
-                        <button onClick={() => { localStorage.removeItem('user_id'); router.push('/'); }} className="text-gray-400 hover:text-white">
-                            Logout
-                        </button>
-                    </div>
-                </div>
-            </nav>
-
-            <div className="container max-w-5xl mt-10">
-                <div className="flex justify-between items-end mb-6">
-                    <div>
-                        <h1 className="text-4xl font-bold mb-2">Welcome, {user?.name}</h1>
-                        <p className="text-gray-400">Manage your profile and track your networking stats.</p>
-                        {nfcError && <div className="mt-2 text-red-400 bg-red-900/20 p-2 rounded inline-block">{nfcError}</div>}
                     </div>
                 </div>
 
                 {showSimulateInput && (
-                    <div className="text-center mb-6 p-6 bg-white/5 rounded-xl border border-glass-border animate-fade-in">
-                        <h3 className="text-xl font-bold mb-4">NFC Simulation Mode</h3>
-                        <p className="text-gray-400 mb-4 text-sm">Since this device doesn't support Web NFC (or it's not active), enter the target email/link manually to simulate a tap.</p>
+                    <div className="text-center mb-6 p-6 bg-white rounded-xl border border-gray-200 shadow-sm animate-fade-in">
+                        <h3 className="text-lg font-bold mb-4 text-ieee-navy">NFC Simulation Mode</h3>
+                        <p className="text-gray-500 mb-4 text-sm">Since this device doesn't support Web NFC (or it's not active), enter the target email/link manually to simulate a tap.</p>
                         <form onSubmit={handleSimulateConnect} className="flex gap-2 max-w-md mx-auto">
                             <input
                                 type="text"
                                 placeholder="Enter Target Email (e.g. alice@example.com)"
                                 value={simulateEmail}
                                 onChange={e => setSimulateEmail(e.target.value)}
-                                className="flex-1 bg-black/50 border border-white/10 rounded-lg p-3 text-white focus:outline-none"
+                                className="flex-1 bg-gray-50 border border-gray-300 rounded-lg p-3 text-gray-900 focus:outline-none focus:border-ieee-blue"
                             />
-                            <button type="submit" className="btn btn-primary whitespace-nowrap">
+                            <button type="submit" className="bg-ieee-blue text-white px-4 py-2 rounded-lg font-semibold hover:bg-blue-700 transition-colors">
                                 Simulate Tap
                             </button>
-                            <button type="button" onClick={() => setShowSimulateInput(false)} className="text-gray-400 px-3 hover:text-white">Cancel</button>
+                            <button type="button" onClick={() => setShowSimulateInput(false)} className="text-gray-400 px-3 hover:text-gray-600">Cancel</button>
                         </form>
                     </div>
                 )}
 
                 {/* Tabs */}
-                <div className="flex gap-4 mb-8 border-b border-gray-800">
+                <div className="flex gap-6 mb-8 border-b border-gray-200 overflow-x-auto">
                     <button
                         onClick={() => setActiveTab('profile')}
-                        className={`pb-3 px-2 ${activeTab === 'profile' ? 'text-blue-400 border-b-2 border-blue-400' : 'text-gray-500'}`}
+                        className={`pb-3 px-1 text-sm font-medium transition-colors border-b-2 whitespace-nowrap ${activeTab === 'profile' ? 'text-ieee-blue border-ieee-blue' : 'text-gray-500 border-transparent hover:text-gray-700'}`}
                     >
                         Overview & Profile
                     </button>
                     <button
                         onClick={() => setActiveTab('connections')}
-                        className={`pb-3 px-2 ${activeTab === 'connections' ? 'text-blue-400 border-b-2 border-blue-400' : 'text-gray-500'}`}
+                        className={`pb-3 px-1 text-sm font-medium transition-colors border-b-2 whitespace-nowrap ${activeTab === 'connections' ? 'text-ieee-blue border-ieee-blue' : 'text-gray-500 border-transparent hover:text-gray-700'}`}
                     >
                         My Connections ({acceptedConnections.length})
                     </button>
                 </div>
 
                 {activeTab === 'profile' && (
-                    <div className="grid md:grid-cols-2 gap-8">
-                        <div className="glass p-8 h-fit">
-                            <h2 className="text-2xl font-bold mb-6">Live Stats</h2>
-                            <div className="text-center p-6 bg-white/5 rounded-xl border border-glass-border">
-                                <div className="text-5xl font-bold gradient-text mb-2">{acceptedConnections.length}</div>
-                                <div className="text-gray-400 uppercase tracking-widest text-sm">Connections</div>
+                    <div className="grid md:grid-cols-2 gap-8 mb-12">
+                        <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 h-fit">
+                            <h2 className="text-xl font-bold mb-6 text-ieee-navy">Live Stats</h2>
+                            <div className="text-center p-8 bg-blue-50 rounded-xl border border-blue-100">
+                                <div className="text-6xl font-bold text-ieee-blue mb-2">{acceptedConnections.length}</div>
+                                <div className="text-ieee-navy font-semibold uppercase tracking-widest text-xs">Connections</div>
                             </div>
 
                             <div className="mt-8 text-center">
-                                <p className="mb-4 text-sm text-gray-400">Share your public profile to connect:</p>
+                                <p className="mb-4 text-sm text-gray-500">Share your public profile to connect:</p>
                                 {user?.slug ? (
-                                    <div className="space-y-2">
-                                        <div className="p-3 bg-zinc-900 rounded border border-zinc-700 text-xs font-mono break-all select-all">
+                                    <div className="space-y-3">
+                                        <div className="p-3 bg-gray-50 rounded border border-gray-200 text-xs font-mono break-all select-all text-gray-600">
                                             {window.location.origin}/sampark/{user.slug}
                                         </div>
-                                        <Link href={`/sampark/${user.slug}`} target="_blank" className="btn btn-outline w-full py-3 flex items-center justify-center gap-2">
+                                        <Link href={`/sampark/${user.slug}`} target="_blank" className="block w-full text-center py-3 border border-ieee-blue text-ieee-blue rounded-lg font-semibold hover:bg-blue-50 transition-colors">
                                             <span>🔗</span> View My Public Profile
                                         </Link>
                                     </div>
                                 ) : (
-                                    <div className="text-yellow-500 text-sm p-4 bg-yellow-900/20 rounded-xl border border-yellow-700">
-                                        ⚠️ Your public link is being generated. Please contact admin to run the backfill.
+                                    <div className="text-amber-700 text-sm p-4 bg-amber-50 rounded-xl border border-amber-200">
+                                        ⚠️ Your public link is being generated. Please contact admin.
                                     </div>
                                 )}
                             </div>
                         </div>
 
                         {/* Update Form */}
-                        <div className="glass p-8">
-                            <h2 className="text-2xl font-bold mb-6">Update Profile</h2>
-                            {message && <div className="bg-green-500/20 text-green-400 p-3 rounded-lg mb-4 text-center">{message}</div>}
-                            <form onSubmit={handleUpdate} className="flex flex-col gap-4">
-                                {/* Form fields same as before... truncated for brevity in thought but needs to be in tool */}
+                        <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
+                            <h2 className="text-xl font-bold mb-6 text-ieee-navy">Update Profile</h2>
+                            {message && <div className="bg-green-50 text-green-700 p-3 rounded-lg mb-4 text-center border border-green-200">{message}</div>}
+                            <form onSubmit={handleUpdate} className="flex flex-col gap-5">
                                 <div>
-                                    <label className="block text-sm text-gray-400 mb-2">Full Name</label>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
                                     <input
                                         type="text"
                                         value={formData.name}
                                         onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                        className="w-full bg-black/50 border border-glass-border rounded-lg p-3 text-white focus:outline-none focus:border-primary"
+                                        className="w-full bg-gray-50 border border-gray-300 rounded-lg p-3 text-gray-900 focus:outline-none focus:border-ieee-blue focus:ring-1 focus:ring-blue-100"
                                     />
                                 </div>
-                                <div className="grid grid-cols-3 gap-2">
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                                     <div>
-                                        <label className="block text-xs text-gray-400 mb-2">LinkedIn URL</label>
+                                        <label className="block text-xs font-medium text-gray-500 mb-1">LinkedIn URL</label>
                                         <input
                                             type="text"
                                             value={formData.linkedin}
                                             onChange={(e) => setFormData({ ...formData, linkedin: e.target.value })}
-                                            className="w-full bg-black/50 border border-glass-border rounded-lg p-3 text-sm text-white focus:outline-none"
+                                            className="w-full bg-gray-50 border border-gray-300 rounded-lg p-2 text-sm text-gray-900 focus:outline-none focus:border-ieee-blue"
                                         />
                                     </div>
                                     <div>
-                                        <label className="block text-xs text-gray-400 mb-2">Instagram URL</label>
+                                        <label className="block text-xs font-medium text-gray-500 mb-1">Instagram URL</label>
                                         <input
                                             type="text"
                                             value={formData.instagram}
                                             onChange={(e) => setFormData({ ...formData, instagram: e.target.value })}
-                                            className="w-full bg-black/50 border border-glass-border rounded-lg p-3 text-sm text-white focus:outline-none"
+                                            className="w-full bg-gray-50 border border-gray-300 rounded-lg p-2 text-sm text-gray-900 focus:outline-none focus:border-ieee-blue"
                                         />
                                     </div>
                                     <div>
-                                        <label className="block text-xs text-gray-400 mb-2">GitHub URL</label>
+                                        <label className="block text-xs font-medium text-gray-500 mb-1">GitHub URL</label>
                                         <input
                                             type="text"
                                             value={formData.github}
                                             onChange={(e) => setFormData({ ...formData, github: e.target.value })}
-                                            className="w-full bg-black/50 border border-glass-border rounded-lg p-3 text-sm text-white focus:outline-none"
+                                            className="w-full bg-gray-50 border border-gray-300 rounded-lg p-2 text-sm text-gray-900 focus:outline-none focus:border-ieee-blue"
                                         />
                                     </div>
                                 </div>
                                 <div>
-                                    <label className="block text-sm text-gray-400 mb-2">Interested Theme</label>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Interested Theme</label>
                                     <select
                                         value={formData.theme}
                                         onChange={(e) => setFormData({ ...formData, theme: e.target.value })}
-                                        className="w-full bg-black/50 border border-glass-border rounded-lg p-3 text-white focus:outline-none"
+                                        className="w-full bg-gray-50 border border-gray-300 rounded-lg p-3 text-gray-900 focus:outline-none focus:border-ieee-blue appearance-none"
                                     >
                                         <option value="AI Agents">AI Agents</option>
                                         <option value="Green Tech">Green Tech</option>
@@ -374,14 +365,14 @@ export default function Dashboard() {
                                     </select>
                                 </div>
                                 <div>
-                                    <label className="block text-sm text-gray-400 mb-2">Bio / Tagline</label>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Bio / Tagline</label>
                                     <textarea
                                         value={formData.bio}
                                         onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
-                                        className="w-full bg-black/50 border border-glass-border rounded-lg p-3 text-white focus:outline-none h-24"
+                                        className="w-full bg-gray-50 border border-gray-300 rounded-lg p-3 text-gray-900 focus:outline-none focus:border-ieee-blue h-24 resize-none"
                                     />
                                 </div>
-                                <button type="submit" className="btn btn-primary mt-2">
+                                <button type="submit" className="bg-ieee-navy text-white hover:bg-black py-3 rounded-lg font-bold shadow-lg transition-transform active:scale-95">
                                     Save Changes
                                 </button>
                             </form>
@@ -392,7 +383,7 @@ export default function Dashboard() {
                 {/* Search & Actions Bar - Moved to Connections Tab */}
                 {activeTab === 'connections' && (
                     <div className="flex gap-4 mb-8">
-                        <Link href="/search" className="btn btn-outline flex-1 text-center py-4 text-lg font-bold hover:bg-white/10">
+                        <Link href="/search" className="flex-1 bg-white border border-gray-300 text-ieee-navy py-4 rounded-xl text-lg font-bold hover:shadow-md hover:border-ieee-blue transition-all text-center flex items-center justify-center gap-2">
                             🔍 Find People & Add Connections
                         </Link>
                     </div>
@@ -400,24 +391,26 @@ export default function Dashboard() {
 
                 {/* Incoming Requests Section */}
                 {activeTab === 'connections' && (
-                    <RequestsList
-                        requests={incomingRequests}
-                        onRespond={handleRespond}
-                    />
+                    <div className="mb-8">
+                        <RequestsList
+                            requests={incomingRequests}
+                            onRespond={handleRespond}
+                        />
+                    </div>
                 )}
 
                 {/* Sent Requests Section (Optional) */}
                 {activeTab === 'connections' && sentRequests.length > 0 && (
-                    <div className="mb-8 opacity-70">
-                        <h3 className="text-lg font-bold mb-4 text-gray-400 ml-2">Sent Requests ({sentRequests.length})</h3>
-                        <div className="grid gap-4">
+                    <div className="mb-8 p-6 bg-gray-100 rounded-xl border border-gray-200">
+                        <h3 className="text-lg font-bold mb-4 text-gray-500">Sent Requests ({sentRequests.length})</h3>
+                        <div className="grid gap-3">
                             {sentRequests.map((req, idx) => (
-                                <div key={idx} className="bg-white/5 p-4 rounded-xl border border-white/5 flex justify-between items-center">
+                                <div key={idx} className="bg-white p-4 rounded-lg shadow-sm flex justify-between items-center">
                                     <div>
-                                        <div className="font-bold">{req.name || req.targetEmail}</div>
-                                        <div className="text-xs text-gray-500">Status: Sent / Pending</div>
+                                        <div className="font-bold text-ieee-navy">{req.name || req.targetEmail}</div>
+                                        <div className="text-xs text-gray-400">Status: Sent / Pending</div>
                                     </div>
-                                    <div className="text-xs text-gray-600">Waiting...</div>
+                                    <div className="text-xs text-gray-400 bg-gray-50 px-2 py-1 rounded">Waiting...</div>
                                 </div>
                             ))}
                         </div>
@@ -425,10 +418,12 @@ export default function Dashboard() {
                 )}
 
                 {activeTab === 'connections' && (
-                    <div className="glass p-8">
-                        <h2 className="text-2xl font-bold mb-6">Your Network</h2>
+                    <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 mb-12">
+                        <h2 className="text-xl font-bold mb-6 text-ieee-navy">Your Network</h2>
                         {acceptedConnections.length === 0 ? (
-                            <div className="text-gray-500 text-center py-10">No active connections.</div>
+                            <div className="text-gray-400 text-center py-12 bg-gray-50 rounded-xl border border-dashed border-gray-200">
+                                No active connections yet. Go find some people!
+                            </div>
                         ) : (
                             <div className="grid gap-4">
                                 {acceptedConnections.map((conn, idx) => {
@@ -438,20 +433,20 @@ export default function Dashboard() {
                                     const displayPhone = isIncoming ? conn.sourcePhone : '';
 
                                     return (
-                                        <div key={idx} className="bg-white/5 p-4 rounded-xl border border-white/10 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 hover:bg-white/10 transition-colors">
+                                        <div key={idx} className="bg-white p-5 rounded-xl border border-gray-100 hover:shadow-md transition-shadow flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                                             <div>
-                                                <div className="font-bold text-lg">{displayName}</div>
-                                                <div className="text-sm text-gray-400">
-                                                    {displayEmail && <span>📧 {displayEmail}</span>}
-                                                    {displayPhone && <span className="ml-3">📞 {displayPhone}</span>}
+                                                <div className="font-bold text-lg text-ieee-navy">{displayName}</div>
+                                                <div className="text-sm text-gray-500 mt-1">
+                                                    {displayEmail && <span className="mr-3">📧 {displayEmail}</span>}
+                                                    {displayPhone && <span>📞 {displayPhone}</span>}
                                                 </div>
                                                 {conn.note && isIncoming && (
-                                                    <div className="mt-2 text-sm bg-black/30 p-2 rounded text-gray-300 italic">
+                                                    <div className="mt-2 text-sm bg-gray-50 p-2 rounded text-gray-600 italic border border-gray-100">
                                                         "{conn.note}"
                                                     </div>
                                                 )}
                                             </div>
-                                            <div className="text-xs text-gray-500 whitespace-nowrap">
+                                            <div className="text-xs text-gray-400 whitespace-nowrap bg-gray-50 px-3 py-1 rounded-full">
                                                 Connected: {new Date(conn.timestamp).toLocaleDateString()}
                                             </div>
                                         </div>

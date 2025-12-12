@@ -1,8 +1,9 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from 'react';
-import styles from './Search.module.css';
 import ParticipantProfileCard from '@/components/ParticipantProfileCard';
+import Navbar from '@/components/Navbar';
+import { Search, Grid, List as ListIcon } from 'lucide-react';
 
 type User = {
     id: string; // email
@@ -115,17 +116,23 @@ export default function SearchPage() {
     };
 
     return (
-        <div className={styles.pageContainer}>
+        <div className="min-h-screen bg-gray-50 pt-20 pb-10 px-4 md:px-8 font-sans">
+            <Navbar isLoggedIn={!!currentUserId} />
+
             {/* Header */}
-            <div className={styles.headerContainer}>
+            <div className="max-w-7xl mx-auto mb-10 mt-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
                 {/* Left: Filters */}
-                <div className={styles.filterGroup}>
-                    <select className={styles.dropdown} value="All Members">
+                <div className="flex gap-4">
+                    <select
+                        className="bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-lg text-sm focus:border-ieee-blue outline-none shadow-sm cursor-pointer"
+                        value="All Members"
+                        onChange={() => { }}
+                    >
                         <option>All Members</option>
                     </select>
 
                     <select
-                        className={styles.dropdown}
+                        className="bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-lg text-sm focus:border-ieee-blue outline-none shadow-sm cursor-pointer"
                         value={sortBy}
                         onChange={(e) => setSortBy(e.target.value)}
                     >
@@ -136,45 +143,45 @@ export default function SearchPage() {
                 </div>
 
                 {/* Right: Actions */}
-                <div className={styles.actionsGroup}>
+                <div className="flex flex-col sm:flex-row items-center gap-4 w-full md:w-auto">
                     {/* View Toggles */}
-                    <div className={styles.viewToggles}>
+                    <div className="flex bg-white p-1 rounded-lg border border-gray-200">
                         <button
-                            className={`${styles.toggleBtn} ${viewMode === 'grid' ? styles.active : ''}`}
+                            className={`p-2 rounded-md transition-colors ${viewMode === 'grid' ? 'bg-ieee-blue text-white' : 'text-gray-400 hover:text-ieee-navy'}`}
                             onClick={() => setViewMode('grid')}
                         >
-                            {/* Grid Icon */}
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+                            <Grid size={18} />
                         </button>
                         <button
-                            className={`${styles.toggleBtn} ${viewMode === 'list' ? styles.active : ''}`}
+                            className={`p-2 rounded-md transition-colors ${viewMode === 'list' ? 'bg-ieee-blue text-white' : 'text-gray-400 hover:text-ieee-navy'}`}
                             onClick={() => setViewMode('list')}
                         >
-                            {/* List Icon */}
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
+                            <ListIcon size={18} />
                         </button>
                     </div>
 
                     {/* Search Bar */}
-                    <div className={styles.searchWrapper}>
-                        <span className={styles.searchIcon}>🔍</span>
+                    <div className="relative w-full sm:w-64 max-w-xs">
+                        <Search size={16} className="absolute left-0 top-1/2 -translate-y-1/2 text-gray-400" />
                         <input
                             type="text"
-                            className={styles.searchInput}
+                            className="w-full pl-6 pr-10 py-2 bg-transparent border-b-2 border-gray-300 text-gray-900 placeholder-gray-400 focus:border-ieee-blue outline-none text-sm transition-colors"
                             placeholder="Find members..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                         />
-                        <span className={styles.resultCount}>{processedUsers.length}</span>
+                        <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs font-bold text-ieee-blue">
+                            {processedUsers.length}
+                        </span>
                     </div>
                 </div>
             </div>
 
-            {/* Grid Content */}
+            {/* Content */}
             {loading ? (
-                <div className="flex justify-center items-center h-64 text-gray-500">Loading directory...</div>
+                <div className="flex justify-center items-center h-64 text-gray-500 font-medium">Loading directory...</div>
             ) : (
-                <div className={viewMode === 'grid' ? styles.gridContainer : styles.listContainer}>
+                <div className={`max-w-7xl mx-auto ${viewMode === 'grid' ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6' : 'flex flex-col gap-4 max-w-4xl'}`}>
                     {processedUsers.map(user => {
                         const rawStatus = myConnections.get(user.id.trim().toLowerCase());
                         let status: ConnectionStatus = 'None';
@@ -193,7 +200,7 @@ export default function SearchPage() {
                     })}
 
                     {processedUsers.length === 0 && (
-                        <div className="text-center w-full text-gray-500 py-20 col-span-full">
+                        <div className="text-center w-full text-gray-400 py-20 col-span-full">
                             No members found matching "{searchQuery}"
                         </div>
                     )}
