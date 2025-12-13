@@ -15,11 +15,14 @@ export default function Home() {
     }
   }, []);
 
-  const societies = [
-    { name: 'Computer Society', logo: '/placeholder-cs.png' },
-    { name: 'ComSoc', logo: '/placeholder-comsoc.png' },
-    { name: 'IAS', logo: '/placeholder-ias.png' },
-    { name: 'PES', logo: '/placeholder-pes.png' },
+  const societyLogos = [
+    "/gallery/IEEE LOGOs/IEEE APS.png",
+    "/gallery/IEEE LOGOs/IEEE CIS.png",
+    "/gallery/IEEE LOGOs/IEEE CS.png",
+    "/gallery/IEEE LOGOs/IEEE IAS.png",
+    "/gallery/IEEE LOGOs/IEEE RAS.png",
+    "/gallery/IEEE LOGOs/IEEE SPS.png",
+    "/gallery/IEEE LOGOs/IEEE WIE.png",
   ];
 
   const galleryImages = [
@@ -72,45 +75,72 @@ export default function Home() {
       {/* About & Institutional Identity */}
       <section className="py-16 md:py-24 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
-          <div className="grid md:grid-cols-2 gap-12 items-center">
-            {/* Text Content */}
-            <div>
-              <h2 className="text-3xl font-bold text-ieee-navy mb-6">About the Conference</h2>
-              <div className="space-y-4 text-gray-600 leading-relaxed">
-                <p>
-                  Sampark 2026 is the flagship event of the IEEE Student Branch at PDEU.
-                  It brings together students, professionals, and industry leaders for a
-                  symposium of knowledge exchange and networking.
-                </p>
-                <p>
-                  Supported by the <strong>IEEE Gujarat Section</strong>, this event aims to
-                  bridge the gap between academic learning and industrial application.
-                </p>
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold text-ieee-navy mb-6">About the Conference</h2>
+            <p className="text-lg text-gray-600 max-w-3xl mx-auto leading-relaxed">
+              Sampark 2026 is the flagship event of the IEEE Student Branch at PDEU, designed to bridge the gap between academic learning and industrial application.
+            </p>
+          </div>
+
+          {/* Tier 1: Strategic Leaders & Hosts */}
+          <div className="mb-20">
+            <h3 className="text-xl md:text-2xl font-bold text-ieee-navy text-center mb-10">Organized & Strategically Led By</h3>
+            <div className="grid md:grid-cols-2 gap-8 md:gap-12 max-w-5xl mx-auto">
+              {/* Left Col: IEEE Gujarat Section */}
+              <div className="flex flex-col items-center text-center p-8 bg-blue-50/50 rounded-2xl border border-blue-100 hover:shadow-md transition-all">
+                <div className="w-32 h-32 md:w-40 md:h-40 bg-white rounded-full flex items-center justify-center shadow-sm border p-4 mb-6">
+                  {/* Placeholder for Gujarat Section Logo */}
+                  <img src="/gallery/IEEE LOGOs/IEEE Gujarat Section.png" alt="IEEE Gujarat Section" className="max-w-full max-h-full object-contain" />
+                </div>
+                <h4 className="text-xl font-bold text-ieee-navy mb-2">IEEE Gujarat Section</h4>
+                <p className="text-ieee-blue font-medium tracking-wide text-sm uppercase">Main Section Lead & Supporter</p>
               </div>
 
-              {/* Special Highlight: Gujarat Section */}
-              <div className="mt-8 p-6 bg-blue-50 rounded-xl border border-blue-100 flex items-center gap-4">
-                <div className="h-16 w-16 bg-white rounded-full flex items-center justify-center shadow-sm text-ieee-blue font-bold text-xs text-center border">
-                  IEEE<br />Gujarat
+              {/* Right Col: IEEE Student Branch PDEU */}
+              <div className="flex flex-col items-center text-center p-8 bg-blue-50/50 rounded-2xl border border-blue-100 hover:shadow-md transition-all">
+                <div className="w-32 h-32 md:w-40 md:h-40 bg-white rounded-full flex items-center justify-center shadow-sm border p-4 mb-6">
+                  {/* Placeholder for SB PDEU Logo */}
+                  <img src="/gallery/IEEE LOGOs/IEEE Student Branch.png" alt="IEEE Student Branch PDEU" className="max-w-full max-h-full object-contain" />
                 </div>
-                <div>
-                  <h4 className="font-bold text-ieee-navy">Supported by IEEE Gujarat Section</h4>
-                  <p className="text-sm text-gray-500">Empowering technical excellence across the region.</p>
-                </div>
+                <h4 className="text-xl font-bold text-ieee-navy mb-2">IEEE Student Branch PDEU</h4>
+                <p className="text-ieee-blue font-medium tracking-wide text-sm uppercase">Host & Student Partner</p>
               </div>
             </div>
+          </div>
 
-            {/* Societies Grid */}
-            <div className="bg-gray-50 p-8 rounded-2xl border border-gray-100">
-              <h3 className="text-center font-semibold text-gray-400 mb-6 text-sm uppercase tracking-widest">Organizing Societies</h3>
-              <div className="grid grid-cols-2 gap-4">
-                {societies.map((society, idx) => (
-                  <div key={idx} className="bg-white p-6 rounded-lg shadow-sm border border-gray-100 flex flex-col items-center justify-center aspect-[4/3] hover:shadow-md transition-shadow">
-                    <div className="w-12 h-12 bg-gray-200 rounded-full mb-3"></div> {/* Placeholder for Logo */}
-                    <span className="text-ieee-navy font-medium text-sm">{society.name}</span>
+          {/* Tier 2: Technical Co-Partners (River Animation) */}
+          <div className="mb-20 overflow-hidden">
+            <h3 className="text-xl md:text-2xl font-bold text-ieee-navy text-center mb-10">Technical Co-Partners: IEEE Societies</h3>
+
+            <div className="relative w-full overflow-hidden group">
+              <div className="absolute inset-y-0 left-0 w-20 bg-gradient-to-r from-white to-transparent z-10"></div>
+              <div className="absolute inset-y-0 right-0 w-20 bg-gradient-to-l from-white to-transparent z-10"></div>
+
+              <div className="flex items-center w-max animate-scroll group-hover:paused">
+                {/* Duplicate the array to ensure seamless loop */}
+                {[...societyLogos, ...societyLogos].map((logo, idx) => (
+                  <div key={idx} className="mx-6 md:mx-10 w-24 md:w-32 transition-transform duration-300 hover:scale-110">
+                    <img src={logo} alt={`IEEE Society ${idx}`} className="w-full h-auto object-contain transition-all" />
                   </div>
                 ))}
               </div>
+            </div>
+          </div>
+
+          {/* Tier 3: Legacy CTA */}
+          <div className="text-center bg-gray-50 rounded-3xl p-10 md:p-16 border border-gray-100 relative overflow-hidden">
+            <div className="absolute top-0 right-0 p-10 opacity-5">
+              <Users size={120} />
+            </div>
+            <div className="relative z-10">
+              <h3 className="text-2xl md:text-3xl font-bold text-ieee-navy mb-4">A Legacy of Excellence</h3>
+              <p className="text-lg text-gray-600 mb-8 max-w-2xl mx-auto">Discover the journey and impact of previous Sampark editions.</p>
+              <Link
+                href="/sampark-history"
+                className="inline-flex items-center gap-2 bg-ieee-blue text-white px-8 py-3 rounded-full font-semibold hover:bg-blue-700 transition-colors shadow-lg hover:shadow-xl"
+              >
+                Learn More About Sampark's Legacy <ArrowRight size={18} />
+              </Link>
             </div>
           </div>
         </div>
